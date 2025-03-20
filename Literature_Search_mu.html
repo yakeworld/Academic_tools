@@ -1,4 +1,775 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Academic Literature Search</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#5D5CDE',
+                    },
+                }
+            }
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://unpkg.com/dompurify@2.4.0/dist/purify.min.js"></script>
+    <style>
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .dark ::-webkit-scrollbar-track {
+            background: #2d2d2d;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        .dark ::-webkit-scrollbar-thumb {
+            background: #555;
+        }
+
+        .dark ::-webkit-scrollbar-thumb:hover {
+            background: #777;
+        }
+
+        /* Animation */
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+        .animate-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        /* Tooltip */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 140px;
+            background-color: #555;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px;
+            position: absolute;
+            z-index: 1;
+            bottom: 150%;
+            left: 50%;
+            margin-left: -70px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .tooltip .tooltiptext::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: #555 transparent transparent transparent;
+        }
+
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+    </style>
+</head>
+
+<body class="bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-6xl">
+        <h1 class="text-3xl font-bold text-center mb-8 text-primary dark:text-primary">Academic Literature Search</h1>
+
+        <!-- Search Form -->
+        <div class="bg-gray-100 dark:bg-gray-800 rounded-lg p-6 mb-8 shadow-md">
             <div class="mb-4">
+                <label for="searchQuery" class="block text-sm font-medium mb-2">Search Keywords (separate with semicolons
+                    ';')</label>
+                <input type="text" id="searchQuery"
+                    class="w-full px-4 py-2 text-base border rounded-md focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    placeholder="Enter keywords, authors, or topics...">
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div>
+                    <label class="block text-sm font-medium mb-2">Select Databases</label>
+                    <div class="space-y-2">
+                        <div class="flex items-center">
+                            <input type="checkbox" id="pubmed" class="rounded text-primary focus:ring-primary h-5 w-5"
+                                checked>
+                            <label for="pubmed" class="ml-2">PubMed</label>
+                        </div>
+                        <div class="flex items-center">
+                            <input type="checkbox" id="semantic"
+                                class="rounded text-primary focus:ring-primary h-5 w-5" checked>
+                            <label for="semantic" class="ml-2">Semantic Scholar</label>
+                        </div>
+                        <div class="flex items-center">
+                            <input type="checkbox" id="arxiv" class="rounded text-primary focus:ring-primary h-5 w-5"
+                                checked>
+                            <label for="arxiv" class="ml-2">arXiv</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label for="resultCount" class="block text-sm font-medium mb-2">Results per Database</label>
+                    <select id="resultCount"
+                        class="w-full px-4 py-2 text-base border rounded-md focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                        <option value="5">5 results</option>
+                        <option value="10" selected>10 results</option>
+                        <option value="20">20 results</option>
+                        <option value="50">50 results</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="yearFilter" class="block text-sm font-medium mb-2">Publication Year</label>
+                    <select id="yearFilter"
+                        class="w-full px-4 py-2 text-base border rounded-md focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                        <option value="all">All Years</option>
+                        <option value="1">Last Year</option>
+                        <option value="5">Last 5 Years</option>
+                        <option value="10">Last 10 Years</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="flex justify-center mt-6">
+                <button id="searchBtn"
+                    class="px-6 py-2 bg-primary hover:bg-opacity-90 text-white font-semibold rounded-md transition duration-300 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50">
+                    Search
+                </button>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loadingState" class="hidden text-center py-8">
+            <div class="inline-block animate-pulse mb-4">
+                <svg class="w-12 h-12 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z">
+                    </path>
+                </svg>
+            </div>
+            <p class="text-lg font-medium text-gray-600 dark:text-gray-300">Searching multiple databases...</p>
+        </div>
+
+        <!-- Results Section -->
+        <div id="resultsSection" class="hidden">
+            <div class="flex flex-wrap justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold">Search Results</h2>
+                <div class="flex space-x-2 mt-2 sm:mt-0">
+                    <button id="selectAllBtn"
+                        class="px-3 py-1 text-sm bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-md transition">
+                        Select All
+                    </button>
+                    <button id="clearSelectionBtn"
+                        class="px-3 py-1 text-sm bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-md transition">
+                        Clear Selection
+                    </button>
+                    <button id="copyBibtexBtn" class="px-3 py-1 text-sm bg-primary hover:bg-opacity-90 text-white rounded-md transition tooltip">
+                        Copy BibTeX
+                        <span class="tooltiptext" id="copyTooltip">Copy to clipboard</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Results Stats -->
+            <div class="mb-4 bg-gray-100 dark:bg-gray-800 p-3 rounded-lg">
+                <p id="resultsStats" class="text-sm"></p>
+            </div>
+
+            <!-- Results Container -->
+            <div id="resultsContainer" class="space-y-6"></div>
+
+            <!-- No Results Message -->
+            <div id="noResultsMessage" class="hidden text-center py-8">
+                <svg class="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor"
+                    viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
+                    </path>
+                </svg>
+                <p class="text-lg text-gray-500 dark:text-gray-400">No results found. Please try different search terms
+                    or databases.</p>
+            </div>
+        </div>
+
+        <!-- BibTeX Modal -->
+        <div id="bibtexModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+            <div class="bg-white dark:bg-gray-800 rounded-lg w-11/12 max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+                <div class="flex justify-between items-center border-b border-gray-200 dark:border-gray-700 p-4">
+                    <h3 class="text-xl font-bold">BibTeX Entries</h3>
+                    <button id="closeModalBtn"
+                        class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                <div class="p-4 overflow-y-auto flex-grow">
+                    <pre id="bibtexContent"
+                        class="bg-gray-100 dark:bg-gray-900 p-4 rounded text-sm overflow-x-auto"></pre>
+                </div>
+                <div class="border-t border-gray-200 dark:border-gray-700 p-4 flex justify-end space-x-3">
+                    <button id="copyModalBibtexBtn"
+                        class="px-4 py-2 bg-primary hover:bg-opacity-90 text-white rounded-md transition">
+                        Copy to Clipboard
+                    </button>
+                    <button id="closeModalBtn2"
+                        class="px-4 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-white rounded-md transition">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Dark mode detection
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            if (event.matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        });
+
+        // Global variables
+        let allResults = [];
+        const currentYear = new Date().getFullYear();
+        const API_DELAY = 500; // Milliseconds - Add a delay between API calls
+
+        // DOM elements
+        const searchBtn = document.getElementById('searchBtn');
+        const loadingState = document.getElementById('loadingState');
+        const resultsSection = document.getElementById('resultsSection');
+        const resultsContainer = document.getElementById('resultsContainer');
+        const noResultsMessage = document.getElementById('noResultsMessage');
+        const resultsStats = document.getElementById('resultsStats');
+        const selectAllBtn = document.getElementById('selectAllBtn');
+        const clearSelectionBtn = document.getElementById('clearSelectionBtn');
+        const copyBibtexBtn = document.getElementById('copyBibtexBtn');
+        const bibtexModal = document.getElementById('bibtexModal');
+        const bibtexContent = document.getElementById('bibtexContent');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const closeModalBtn2 = document.getElementById('closeModalBtn2');
+        const copyModalBibtexBtn = document.getElementById('copyModalBibtexBtn');
+        const copyTooltip = document.getElementById('copyTooltip');
+
+        // Event listeners
+        searchBtn.addEventListener('click', performSearch);
+        selectAllBtn.addEventListener('click', selectAllResults);
+        clearSelectionBtn.addEventListener('click', clearSelection);
+        copyBibtexBtn.addEventListener('click', copySelectedBibtex);
+        closeModalBtn.addEventListener('click', closeModal);
+        closeModalBtn2.addEventListener('click', closeModal);
+        copyModalBibtexBtn.addEventListener('click', copyModalBibtex);
+
+        // Search functionality
+        function performSearch() {
+            const searchQuery = document.getElementById('searchQuery').value.trim();
+            if (!searchQuery) {
+                alert('Please enter a search query');
+                return;
+            }
+
+            const resultCount = parseInt(document.getElementById('resultCount').value);
+            const yearFilter = document.getElementById('yearFilter').value;
+            const pubmedChecked = document.getElementById('pubmed').checked;
+            const semanticChecked = document.getElementById('semantic').checked;
+            const arxivChecked = document.getElementById('arxiv').checked;
+
+            if (!pubmedChecked && !semanticChecked && !arxivChecked) {
+                alert('Please select at least one database');
+                return;
+            }
+
+            // Show loading state
+            loadingState.classList.remove('hidden');
+            resultsSection.classList.add('hidden');
+            noResultsMessage.classList.add('hidden');
+
+            // Clear previous results
+            allResults = [];
+
+            // Get the publication year limit based on filter
+            const yearLimit = getYearLimit(yearFilter);
+
+            // Parse keywords (separated by semicolons)
+            const keywords = searchQuery.split(';').map(k => k.trim()).filter(k => k);
+            if (keywords.length === 0) keywords.push(searchQuery); // If no semicolons, use the whole query
+
+            // Track the number of completed requests
+            let completedRequests = 0;
+            const totalRequests = (pubmedChecked ? 1 : 0) + (semanticChecked ? 1 : 0) + (arxivChecked ? 1 : 0);
+
+            // Function to check if all requests are complete
+            const checkAllComplete = () => {
+                completedRequests++;
+                if (completedRequests === totalRequests) {
+                    displayResults();
+                }
+            };
+
+            // Perform searches based on selected databases
+            if (pubmedChecked) {
+                searchPubMed(keywords, resultCount, yearLimit).then(results => {
+                    allResults = [...allResults, ...results];
+                    checkAllComplete();
+                }).catch(error => {
+                    console.error('PubMed search error:', error);
+                    checkAllComplete();
+                });
+            }
+
+            if (semanticChecked) {
+                searchSemanticScholar(keywords, resultCount, yearLimit).then(results => {
+                    allResults = [...allResults, ...results];
+                    checkAllComplete();
+                }).catch(error => {
+                    console.error('Semantic Scholar search error:', error);
+                    checkAllComplete();
+                });
+            }
+
+            if (arxivChecked) {
+                searchArXiv(keywords, resultCount, yearLimit).then(results => {
+                    allResults = [...allResults, ...results];
+                    checkAllComplete();
+                }).catch(error => {
+                    console.error('arXiv search error:', error);
+                    checkAllComplete();
+                });
+            }
+        }
+
+        function getYearLimit(yearFilter) {
+            switch (yearFilter) {
+                case '1': return currentYear - 1;
+                case '5': return currentYear - 5;
+                case '10': return currentYear - 10;
+                default: return 0; // All years
+            }
+        }
+
+        // Helper function to introduce delay
+        function delay(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+
+        // API Functions
+        async function searchPubMed(keywords, limit, yearLimit) {
+            const results = [];
+
+            for (const keyword of keywords) {
+                try {
+                    // First, search for IDs
+                    const searchUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=${encodeURIComponent(keyword)}&retmode=json&retmax=${limit}`;
+
+                    const searchResponse = await sendXHR(searchUrl, 'GET');
+                    const searchData = JSON.parse(searchResponse);
+
+                    if (!searchData.esearchresult || !searchData.esearchresult.idlist || searchData.esearchresult.idlist.length === 0) {
+                        continue;
+                    }
+
+                    const ids = searchData.esearchresult.idlist;
+
+                    // Then fetch the details for each ID
+                    const fetchUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=${ids.join(',')}&retmode=xml`;
+
+                    const fetchResponse = await sendXHR(fetchUrl, 'GET');
+                    const parser = new DOMParser();
+                    const xmlDoc = parser.parseFromString(fetchResponse, "text/xml");
+
+                    const articles = xmlDoc.getElementsByTagName('PubmedArticle');
+
+                    for (let i = 0; i < articles.length; i++) {
+                        const article = articles[i];
+
+                        // Extract publication year
+                        let pubYear = null;
+                        const pubDateElements = article.getElementsByTagName('PubDate');
+                        if (pubDateElements.length > 0) {
+                            const yearElements = pubDateElements[0].getElementsByTagName('Year');
+                            if (yearElements.length > 0) {
+                                pubYear = parseInt(yearElements[0].textContent);
+                            }
+                        }
+
+                        // Apply year filter
+                        if (yearLimit > 0 && pubYear && pubYear < yearLimit) {
+                            continue;
+                        }
+
+                        // Extract article information
+                        const pmid = article.getElementsByTagName('PMID')[0]?.textContent || '';
+
+                        const titleElements = article.getElementsByTagName('ArticleTitle');
+                        const title = titleElements.length > 0 ? titleElements[0].textContent : 'No title available';
+
+                        // Extract authors
+                        const authorElements = article.getElementsByTagName('Author');
+                        const authors = [];
+                        for (let j = 0; j < authorElements.length; j++) {
+                            const lastName = authorElements[j].getElementsByTagName('LastName')[0]?.textContent || '';
+                            const initials = authorElements[j].getElementsByTagName('Initials')[0]?.textContent || '';
+                            if (lastName) {
+                                authors.push(`${lastName} ${initials}`.trim());
+                            }
+                        }
+
+                        // Extract abstract
+                        const abstractElements = article.getElementsByTagName('AbstractText');
+                        let abstract = '';
+                        for (let j = 0; j < abstractElements.length; j++) {
+                            abstract += abstractElements[j].textContent + ' ';
+                        }
+                        abstract = abstract.trim();
+
+                        // Extract journal information
+                        const journalElements = article.getElementsByTagName('Journal');
+                        let journal = '';
+                        let volume = '';
+                        let issue = '';
+                        let pages = '';
+
+                        if (journalElements.length > 0) {
+                            const journalElement = journalElements[0];
+                            const journalTitle = journalElement.getElementsByTagName('Title')[0]?.textContent || '';
+                            journal = journalTitle;
+
+                            volume = journalElement.getElementsByTagName('Volume')[0]?.textContent || '';
+                            issue = journalElement.getElementsByTagName('Issue')[0]?.textContent || '';
+                        }
+
+                        const paginationElements = article.getElementsByTagName('Pagination');
+                        if (paginationElements.length > 0) {
+                            pages = paginationElements[0].getElementsByTagName('MedlinePgn')[0]?.textContent || '';
+                        }
+
+                        // Extract DOI
+                        let doi = '';
+                        const articleIdList = article.getElementsByTagName('ArticleId');
+                        for (let j = 0; j < articleIdList.length; j++) {
+                            if (articleIdList[j].getAttribute('IdType') === 'doi') {
+                                doi = articleIdList[j].textContent;
+                                break;
+                            }
+                        }
+
+                        // Create result object
+                        const result = {
+                            id: pmid,
+                            title: title,
+                            authors: authors,
+                            year: pubYear,
+                            abstract: abstract,
+                            journal: journal,
+                            volume: volume,
+                            issue: issue,
+                            pages: pages,
+                            doi: doi,
+                            url: `https://pubmed.ncbi.nlm.nih.gov/${pmid}/`,
+                            source: 'PubMed',
+                            citationCount: null,
+                            bibtexType: 'article'
+                        };
+
+                        results.push(result);
+                    }
+                } catch (error) {
+                    console.error('Error fetching PubMed data for keyword:', keyword, error);
+                }
+                await delay(API_DELAY); // Add delay after processing each keyword
+            }
+
+            return results;
+        }
+
+        async function searchSemanticScholar(keywords, limit, yearLimit) {
+            const results = [];
+
+            for (const keyword of keywords) {
+                try {
+                    const apiUrl = `https://api.semanticscholar.org/graph/v1/paper/search?query=${encodeURIComponent(keyword)}&limit=${limit}&fields=title,authors,year,venue,url,abstract,citationCount,externalIds,journal,fieldsOfStudy,publicationTypes,publicationDate`;
+
+                    const response = await sendXHR(apiUrl, 'GET');
+                    const data = JSON.parse(response);
+
+                    if (!data.data || data.data.length === 0) {
+                        continue;
+                    }
+
+                    for (const paper of data.data) {
+                        // Apply year filter
+                        if (yearLimit > 0 && paper.year && paper.year < yearLimit) {
+                            continue;
+                        }
+
+                        // Extract DOI
+                        let doi = '';
+                        if (paper.externalIds && paper.externalIds.DOI) {
+                            doi = paper.externalIds.DOI;
+                        }
+
+                        // Extract authors
+                        const authors = paper.authors ? paper.authors.map(author => author.name) : [];
+
+                        // Create result object
+                        const result = {
+                            id: paper.paperId,
+                            title: paper.title || 'No title available',
+                            authors: authors,
+                            year: paper.year,
+                            abstract: paper.abstract || '',
+                            journal: paper.journal ? paper.journal.name : (paper.venue || ''),
+                            volume: '',
+                            issue: '',
+                            pages: '',
+                            doi: doi,
+                            url: paper.url || `https://www.semanticscholar.org/paper/${paper.paperId}`,
+                            source: 'Semantic Scholar',
+                            citationCount: paper.citationCount,
+                            fieldsOfStudy: paper.fieldsOfStudy,
+                            bibtexType: 'article'
+                        };
+
+                        results.push(result);
+                    }
+                } catch (error) {
+                    console.error('Error fetching Semantic Scholar data for keyword:', keyword, error);
+                }
+                await delay(API_DELAY); // Add delay after processing each keyword
+            }
+
+            return results;
+        }
+
+        async function searchArXiv(keywords, limit, yearLimit) {
+            const results = [];
+
+            for (const keyword of keywords) {
+                try {
+                    const apiUrl = `https://export.arxiv.org/api/query?search_query=all:${encodeURIComponent(keyword)}&start=0&max_results=${limit}`;
+
+                    const response = await sendXHR(apiUrl, 'GET');
+                    const parser = new DOMParser();
+                    const xmlDoc = parser.parseFromString(response, "text/xml");
+
+                    const entries = xmlDoc.getElementsByTagName('entry');
+
+                    for (let i = 0; i < entries.length; i++) {
+                        const entry = entries[i];
+
+                        // Extract publication date and year
+                        const published = entry.getElementsByTagName('published')[0]?.textContent || '';
+                        const pubYear = published ? parseInt(published.substring(0, 4)) : null;
+
+                        // Apply year filter
+                        if (yearLimit > 0 && pubYear && pubYear < yearLimit) {
+                            continue;
+                        }
+
+                        // Extract arXiv ID
+                        const idElement = entry.getElementsByTagName('id')[0];
+                        const idText = idElement ? idElement.textContent : '';
+                        const arxivId = idText.substring(idText.lastIndexOf('/') + 1);
+
+                        // Extract title
+                        const titleElement = entry.getElementsByTagName('title')[0];
+                        const title = titleElement ? titleElement.textContent.replace(/\s+/g, ' ').trim() : 'No title available';
+
+                        // Extract authors
+                        const authorElements = entry.getElementsByTagName('author');
+                        const authors = [];
+                        for (let j = 0; j < authorElements.length; j++) {
+                            const nameElement = authorElements[j].getElementsByTagName('name')[0];
+                            if (nameElement) {
+                                authors.push(nameElement.textContent);
+                            }
+                        }
+
+                        // Extract abstract
+                        const summaryElement = entry.getElementsByTagName('summary')[0];
+                        const abstract = summaryElement ? summaryElement.textContent.replace(/\s+/g, ' ').trim() : '';
+
+                        // Extract categories/subject
+                        const categoryElements = entry.getElementsByTagName('category');
+                        const categories = [];
+                        for (let j = 0; j < categoryElements.length; j++) {
+                            const term = categoryElements[j].getAttribute('term');
+                            if (term) {
+                                categories.push(term);
+                            }
+                        }
+
+                        // Create URL
+                        const url = entry.getElementsByTagName('link')[0]?.getAttribute('href') || `https://arxiv.org/abs/${arxivId}`;
+
+                        // Create result object
+                        const result = {
+                            id: arxivId,
+                            title: title,
+                            authors: authors,
+                            year: pubYear,
+                            abstract: abstract,
+                            journal: 'arXiv',
+                            categories: categories,
+                            volume: '',
+                            issue: '',
+                            pages: '',
+                            doi: '',
+                            url: url,
+                            source: 'arXiv',
+                            citationCount: null,
+                            bibtexType: 'article'
+                        };
+
+                        results.push(result);
+                    }
+                } catch (error) {
+                    console.error('Error fetching arXiv data for keyword:', keyword, error);
+                }
+                await delay(API_DELAY); // Add delay after processing each keyword
+            }
+
+            return results;
+        }
+
+        // Helper function for XMLHttpRequest
+        function sendXHR(url, method) {
+            return new Promise((resolve, reject) => {
+                const xhr = new XMLHttpRequest();
+                xhr.open(method, url, true);
+                xhr.onload = function () {
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        resolve(xhr.responseText);
+                    } else {
+                        reject(new Error(`HTTP error, status = ${xhr.status}`));
+                    }
+                };
+                xhr.onerror = function () {
+                    reject(new Error('Network error'));
+                };
+                xhr.send();
+            });
+        }
+
+        // Display results
+        function displayResults() {
+            loadingState.classList.add('hidden');
+            resultsSection.classList.remove('hidden');
+
+            if (allResults.length === 0) {
+                noResultsMessage.classList.remove('hidden');
+                resultsStats.textContent = 'No results found';
+                return;
+            }
+
+            // Update stats
+            resultsStats.textContent = `Found ${allResults.length} results: ` +
+                `${allResults.filter(r => r.source === 'PubMed').length} from PubMed, ` +
+                `${allResults.filter(r => r.source === 'Semantic Scholar').length} from Semantic Scholar, ` +
+                `${allResults.filter(r => r.source === 'arXiv').length} from arXiv`;
+
+            // Sort results by year (newest first)
+            allResults.sort((a, b) => (b.year || 0) - (a.year || 0));
+
+            // Clear the container
+            resultsContainer.innerHTML = '';
+
+            // Add each result
+            allResults.forEach((result, index) => {
+                const resultElement = createResultElement(result, index);
+                resultsContainer.appendChild(resultElement);
+            });
+        }
+
+        function createResultElement(result, index) {
+            const div = document.createElement('div');
+            div.className = 'bg-white dark:bg-gray-800 rounded-lg p-5 shadow-md border border-gray-200 dark:border-gray-700';
+            div.dataset.index = index;
+
+            // Create source badge
+            let badgeColor = '';
+            switch (result.source) {
+                case 'PubMed': badgeColor = 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'; break;
+                case 'Semantic Scholar': badgeColor = 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'; break;
+                case 'arXiv': badgeColor = 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'; break;
+            }
+
+            // Citation count display
+            const citationDisplay = result.citationCount ?
+                `<span class="text-gray-600 dark:text-gray-400">(${result.citationCount} citations)</span>` : '';
+
+            // Parse and sanitize abstract
+            const safeAbstract = result.abstract ? DOMPurify.sanitize(marked.parse(result.abstract)) : 'No abstract available';
+
+            // Journal info display
+            let journalInfo = '';
+            if (result.journal) {
+                journalInfo = `<span class="italic">${result.journal}</span>`;
+                if (result.volume) journalInfo += `, Vol. ${result.volume}`;
+                if (result.issue) journalInfo += `, No. ${result.issue}`;
+                if (result.pages) journalInfo += `, pp. ${result.pages}`;
+            }
+
+            // Generate BibTeX
+            const bibtex = generateBibTeX(result);
+
+            div.innerHTML = `
+                <div class="flex items-start mb-4">
+                    <div class="flex-1">
+                        <div class="flex items-center mb-2">
+                            <input type="checkbox" class="result-checkbox mr-3 h-5 w-5 rounded border-gray-300 text-primary focus:ring-primary" data-index="${index}">
+                            <span class="inline-block px-2 py-1 text-xs font-semibold ${badgeColor} rounded-full mr-2">
+                                ${result.source}
+                            </span>
+                            ${result.year ? `<span class="text-sm text-gray-500 dark:text-gray-400">${result.year}</span>` : ''}
+                        </div>
+                        <h3 class="text-lg font-bold mb-2">${result.title}</h3>
+                        <p class="mb-2 text-gray-700 dark:text-gray-300">${result.authors.join(', ')}</p>
+                        ${journalInfo ? `<p class="mb-3 text-gray-600             <div class="mb-4">
                 <div class="text-sm text-gray-700 dark:text-gray-300 abstract-content">${safeAbstract}</div>
             </div>
             
@@ -172,3 +943,6 @@
 
 </body>
 </html>
+
+
+ 
