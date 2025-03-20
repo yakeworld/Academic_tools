@@ -113,8 +113,8 @@
         <!-- Search Form -->
         <div class="bg-gray-100 dark:bg-gray-800 rounded-lg p-6 mb-8 shadow-md">
             <div class="mb-4">
-                <label for="searchQuery" class="block text-sm font-medium mb-2">Search Keywords (separate with semicolons
-                    ';')</label>
+                <label for="searchQuery" class="block text-sm font-medium mb-2">Search Keywords (separate with
+                    semicolons ';')</label>
                 <input type="text" id="searchQuery"
                     class="w-full px-4 py-2 text-base border rounded-md focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                     placeholder="Enter keywords, authors, or topics...">
@@ -125,8 +125,8 @@
                     <label class="block text-sm font-medium mb-2">Select Databases</label>
                     <div class="space-y-2">
                         <div class="flex items-center">
-                            <input type="checkbox" id="pubmed" class="rounded text-primary focus:ring-primary h-5 w-5"
-                                checked>
+                            <input type="checkbox" id="pubmed"
+                                class="rounded text-primary focus:ring-primary h-5 w-5" checked>
                             <label for="pubmed" class="ml-2">PubMed</label>
                         </div>
                         <div class="flex items-center">
@@ -135,8 +135,8 @@
                             <label for="semantic" class="ml-2">Semantic Scholar</label>
                         </div>
                         <div class="flex items-center">
-                            <input type="checkbox" id="arxiv" class="rounded text-primary focus:ring-primary h-5 w-5"
-                                checked>
+                            <input type="checkbox" id="arxiv"
+                                class="rounded text-primary focus:ring-primary h-5 w-5" checked>
                             <label for="arxiv" class="ml-2">arXiv</label>
                         </div>
                     </div>
@@ -222,8 +222,8 @@
                         d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
                     </path>
                 </svg>
-                <p class="text-lg text-gray-500 dark:text-gray-400">No results found. Please try different search terms
-                    or databases.</p>
+                <p class="text-lg text-gray-500 dark:text-gray-400">No results found. Please try different search
+                    terms or databases.</p>
             </div>
         </div>
 
@@ -232,26 +232,20 @@
             <div class="bg-white dark:bg-gray-800 rounded-lg w-11/12 max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
                 <div class="flex justify-between items-center border-b border-gray-200 dark:border-gray-700 p-4">
                     <h3 class="text-xl font-bold">BibTeX Entries</h3>
-                    <button id="closeModalBtn"
-                        class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                            xmlns="http://www.w3.org/2000/svg">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M6 18L18 6M6 6l12 12"></path>
+                    <button id="closeModalBtn" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                         </svg>
                     </button>
                 </div>
                 <div class="p-4 overflow-y-auto flex-grow">
-                    <pre id="bibtexContent"
-                        class="bg-gray-100 dark:bg-gray-900 p-4 rounded text-sm overflow-x-auto"></pre>
+                    <pre id="bibtexContent" class="bg-gray-100 dark:bg-gray-900 p-4 rounded text-sm overflow-x-auto"></pre>
                 </div>
                 <div class="border-t border-gray-200 dark:border-gray-700 p-4 flex justify-end space-x-3">
-                    <button id="copyModalBibtexBtn"
-                        class="px-4 py-2 bg-primary hover:bg-opacity-90 text-white rounded-md transition">
+                    <button id="copyModalBibtexBtn" class="px-4 py-2 bg-primary hover:bg-opacity-90 text-white rounded-md transition">
                         Copy to Clipboard
                     </button>
-                    <button id="closeModalBtn2"
-                        class="px-4 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-white rounded-md transition">
+                    <button id="closeModalBtn2" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-white rounded-md transition">
                         Close
                     </button>
                 </div>
@@ -275,7 +269,7 @@
         // Global variables
         let allResults = [];
         const currentYear = new Date().getFullYear();
-        const API_DELAY = 500; // Milliseconds - Add a delay between API calls
+        const DELAY_MS = 500; // Time delay in milliseconds. Adjust as needed.
 
         // DOM elements
         const searchBtn = document.getElementById('searchBtn');
@@ -361,13 +355,16 @@
             }
 
             if (semanticChecked) {
-                searchSemanticScholar(keywords, resultCount, yearLimit).then(results => {
-                    allResults = [...allResults, ...results];
-                    checkAllComplete();
-                }).catch(error => {
-                    console.error('Semantic Scholar search error:', error);
-                    checkAllComplete();
-                });
+                //Introduce delay before Semantic Scholar search
+                setTimeout(() => {
+                    searchSemanticScholar(keywords, resultCount, yearLimit).then(results => {
+                        allResults = [...allResults, ...results];
+                        checkAllComplete();
+                    }).catch(error => {
+                        console.error('Semantic Scholar search error:', error);
+                        checkAllComplete();
+                    });
+                }, DELAY_MS);
             }
 
             if (arxivChecked) {
@@ -389,12 +386,6 @@
                 default: return 0; // All years
             }
         }
-
-        // Helper function to introduce delay
-        function delay(ms) {
-            return new Promise(resolve => setTimeout(resolve, ms));
-        }
-
 
         // API Functions
         async function searchPubMed(keywords, limit, yearLimit) {
@@ -520,7 +511,6 @@
                 } catch (error) {
                     console.error('Error fetching PubMed data for keyword:', keyword, error);
                 }
-                await delay(API_DELAY); // Add delay after processing each keyword
             }
 
             return results;
@@ -579,7 +569,6 @@
                 } catch (error) {
                     console.error('Error fetching Semantic Scholar data for keyword:', keyword, error);
                 }
-                await delay(API_DELAY); // Add delay after processing each keyword
             }
 
             return results;
@@ -670,7 +659,6 @@
                 } catch (error) {
                     console.error('Error fetching arXiv data for keyword:', keyword, error);
                 }
-                await delay(API_DELAY); // Add delay after processing each keyword
             }
 
             return results;
@@ -769,180 +757,198 @@
                         </div>
                         <h3 class="text-lg font-bold mb-2">${result.title}</h3>
                         <p class="mb-2 text-gray-700 dark:text-gray-300">${result.authors.join(', ')}</p>
-                        ${journalInfo ? `<p class="mb-3 text-gray-600             <div class="mb-4">
-                <div class="text-sm text-gray-700 dark:text-gray-300 abstract-content">${safeAbstract}</div>
-            </div>
-            
-            <div class="flex flex-wrap gap-2 text-sm">
-                ${result.doi ? `
-                    <a href="https://doi.org/${result.doi}" target="_blank" rel="noopener noreferrer" 
-                       class="inline-flex items-center px-3 py-1 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-full">
-                        <span class="mr-1">DOI:</span> ${result.doi}
+                        ${journalInfo ? `<p class="mb-3 text-gray-600 dark:text-gray-400">${journalInfo}</p>` : ''}
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <div class="text-sm text-gray-700 dark:text-gray-300 abstract-content">${safeAbstract}</div>                </div>
+                
+                <div class="flex flex-wrap gap-2 text-sm">
+                    ${result.doi ? `
+                        <a href="https://doi.org/${result.doi}" target="_blank" rel="noopener noreferrer" 
+                           class="inline-flex items-center px-3 py-1 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-full">
+                            <span class="mr-1">DOI:</span> ${result.doi}
+                        </a>
+                    ` : ''}
+                    
+                    ${result.id ? `
+                        <span class="inline-flex items-center px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-full">
+                            <span class="mr-1">ID:</span> ${result.id}
+                        </span>
+                    ` : ''}
+                    
+                    ${result.citationCount ? `
+                        <span class="inline-flex items-center px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-full">
+                            <span class="mr-1">Citations:</span> ${result.citationCount}
+                        </span>
+                    ` : ''}
+                    
+                    <a href="${result.url}" target="_blank" rel="noopener noreferrer" 
+                       class="inline-flex items-center px-3 py-1 bg-primary text-white hover:bg-opacity-90 rounded-full">
+                        View Article
                     </a>
-                ` : ''}
-                
-                ${result.id ? `
-                    <span class="inline-flex items-center px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-full">
-                        <span class="mr-1">ID:</span> ${result.id}
-                    </span>
-                ` : ''}
-                
-                ${result.citationCount ? `
-                    <span class="inline-flex items-center px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-full">
-                        <span class="mr-1">Citations:</span> ${result.citationCount}
-                    </span>
-                ` : ''}
-                
-                <a href="${result.url}" target="_blank" rel="noopener noreferrer" 
-                   class="inline-flex items-center px-3 py-1 bg-primary text-white hover:bg-opacity-90 rounded-full">
-                    View Article
-                </a>
-                
-                <button class="bibtex-btn inline-flex items-center px-3 py-1 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-full"
-                        data-bibtex="${encodeURIComponent(bibtex)}">
-                    BibTeX
-                </button>
-            </div>
-        `;
+                    
+                    <button class="bibtex-btn inline-flex items-center px-3 py-1 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-full"
+                            data-bibtex="${encodeURIComponent(bibtex)}">
+                        BibTeX
+                    </button>
+                </div>
+            `;
 
-        // Add event listener for BibTeX button
-        const bibtexBtn = div.querySelector('.bibtex-btn');
-        bibtexBtn.addEventListener('click', function () {
-            const bibtexData = decodeURIComponent(this.dataset.bibtex);
+            // Add event listener for BibTeX button
+            const bibtexBtn = div.querySelector('.bibtex-btn');
+            bibtexBtn.addEventListener('click', function () {
+                const bibtexData = decodeURIComponent(this.dataset.bibtex);
+                showBibtexModal(bibtexData);
+            });
+
+            return div;
+        }
+
+        // BibTeX Generation
+		function generateBibTeX(result) {
+			// Create a citation key
+			const firstAuthor = result.authors.length > 0 ? result.authors[0].split(' ').pop() : 'Unknown';
+			const year = result.year || 'NoYear';
+			const firstTitleWord = result.title.split(' ')[0].replace(/[^\w]/g, '');
+			const citationKey = `${firstAuthor}${year}${firstTitleWord}`;
+
+			let bibtex = `@${result.bibtexType}{${citationKey},\n`;
+
+			// Add authors
+			if (result.authors.length > 0) {
+				bibtex += `  author = {${result.authors.join(' and ')}},\n`;
+			}
+
+			// Add title
+			bibtex += `  title = {${result.title}},\n`;
+
+			// Add journal/publication venue
+			if (result.journal) {
+				bibtex += `  journal = {${result.journal}},\n`;
+			}
+
+			// Add year
+			if (result.year) {
+				bibtex += `  year = {${result.year}},\n`;
+			}
+
+			// Add volume, number, pages if available
+			if (result.volume) bibtex += `  volume = {${result.volume}},\n`;
+			if (result.issue) bibtex += `  number = {${result.issue}},\n`;
+			if (result.pages) bibtex += `  pages = {${result.pages}},\n`;
+
+			// Add DOI if available
+			if (result.doi) {
+				bibtex += `  doi = {${result.doi}},\n`;
+			}
+
+			// Add URL
+			if (result.url) {
+				bibtex += `  url = {${result.url}},\n`;
+			}
+
+			//Add Abstract
+			if (result.abstract) {
+				// Escape special characters in the abstract
+				const escapedAbstract = result.abstract.replace(/[{}]/g, (match) => {
+					return '\\' + match;
+				});
+				bibtex += `  abstract = {${escapedAbstract}},\n`;
+			}
+
+			// Add keywords/categories (if available, e.g., from arXiv)
+			if (result.categories && result.categories.length > 0) {
+				bibtex += `  keywords = {${result.categories.join(', ')}},\n`;
+			}
+
+			// Add source-specific identifiers
+			if (result.source === 'PubMed') {
+				bibtex += `  pmid = {${result.id}},\n`;
+			} else if (result.source === 'arXiv') {
+				bibtex += `  archivePrefix = {arXiv},\n`;
+				bibtex += `  eprint = {${result.id}},\n`;
+			}
+			// Add Semantic Scholar's fields of study if available
+			if (result.source === 'Semantic Scholar' && result.fieldsOfStudy && result.fieldsOfStudy.length > 0) {
+				bibtex += `  keywords = {${result.fieldsOfStudy.join(', ')}},\n`; // Use 'keywords' for subject areas
+			}
+
+			// Close the entry
+			bibtex += `}`;
+
+			return bibtex;
+		}
+
+        // Selection functionality
+        function selectAllResults() {
+            const checkboxes = document.querySelectorAll('.result-checkbox');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = true;
+            });
+        }
+
+        function clearSelection() {
+            const checkboxes = document.querySelectorAll('.result-checkbox');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = false;
+            });
+        }
+
+        // BibTeX handling
+        function copySelectedBibtex() {
+            const selectedCheckboxes = document.querySelectorAll('.result-checkbox:checked');
+            if (selectedCheckboxes.length === 0) {
+                alert('Please select at least one result first');
+                return;
+            }
+
+            let bibtexData = '';
+            selectedCheckboxes.forEach(checkbox => {
+                const index = parseInt(checkbox.dataset.index);
+                const result = allResults[index];
+                bibtexData += generateBibTeX(result) + '\n\n';
+            });
+
             showBibtexModal(bibtexData);
+        }
+
+        function showBibtexModal(bibtexData) {
+            bibtexContent.textContent = bibtexData;
+            bibtexModal.classList.remove('hidden');
+        }
+
+        function closeModal() {
+            bibtexModal.classList.add('hidden');
+        }
+
+        function copyModalBibtex() {
+            const bibtexText = bibtexContent.textContent;
+            navigator.clipboard.writeText(bibtexText).then(() => {
+                copyTooltip.textContent = 'Copied!';
+                setTimeout(() => {
+                    copyTooltip.textContent = 'Copy to clipboard';
+                }, 2000);
+            }).catch(err => {
+                console.error('Error copying text: ', err);
+            });
+        }
+
+        // Close modal when clicking outside
+        window.addEventListener('click', function (event) {
+            if (event.target === bibtexModal) {
+                closeModal();
+            }
         });
 
-        return div;
-    }
-
-    // BibTeX Generation
-    function generateBibTeX(result) {
-        // Create a citation key
-        const firstAuthor = result.authors.length > 0 ? result.authors[0].split(' ').pop() : 'Unknown';
-        const year = result.year || 'NoYear';
-        const firstTitleWord = result.title.split(' ')[0].replace(/[^\w]/g, '');
-        const citationKey = `${firstAuthor}${year}${firstTitleWord}`;
-
-        let bibtex = `@${result.bibtexType}{${citationKey},\n`;
-
-        // Add authors
-        if (result.authors.length > 0) {
-            bibtex += `  author = {${result.authors.join(' and ')}},\n`;
-        }
-
-        // Add title
-        bibtex += `  title = {${result.title}},\n`;
-
-        // Add journal/publication venue
-        if (result.journal) {
-            bibtex += `  journal = {${result.journal}},\n`;
-        }
-
-        // Add year
-        if (result.year) {
-            bibtex += `  year = {${result.year}},\n`;
-        }
-
-        // Add volume, number, pages if available
-        if (result.volume) bibtex += `  volume = {${result.volume}},\n`;
-        if (result.issue) bibtex += `  number = {${result.issue}},\n`;
-        if (result.pages) bibtex += `  pages = {${result.pages}},\n`;
-
-        // Add DOI if available
-        if (result.doi) {
-            bibtex += `  doi = {${result.doi}},\n`;
-        }
-
-        // Add URL
-        if (result.url) {
-            bibtex += `  url = {${result.url}},\n`;
-        }
-
-        // Add source-specific identifiers
-        if (result.source === 'PubMed') {
-            bibtex += `  pmid = {${result.id}},\n`;
-        } else if (result.source === 'arXiv') {
-            bibtex += `  archivePrefix = {arXiv},\n`;
-            bibtex += `  eprint = {${result.id}},\n`;
-        }
-
-        // Close the entry
-        bibtex += `}`;
-
-        return bibtex;
-    }
-
-    // Selection functionality
-    function selectAllResults() {
-        const checkboxes = document.querySelectorAll('.result-checkbox');
-        checkboxes.forEach(checkbox => {
-            checkbox.checked = true;
+        // Allow pressing Enter in search field
+        document.getElementById('searchQuery').addEventListener('keypress', function (event) {
+            if (event.key === 'Enter') {
+                searchBtn.click();
+            }
         });
-    }
-
-    function clearSelection() {
-        const checkboxes = document.querySelectorAll('.result-checkbox');
-        checkboxes.forEach(checkbox => {
-            checkbox.checked = false;
-        });
-    }
-
-    // BibTeX handling
-    function copySelectedBibtex() {
-        const selectedCheckboxes = document.querySelectorAll('.result-checkbox:checked');
-        if (selectedCheckboxes.length === 0) {
-            alert('Please select at least one result first');
-            return;
-        }
-
-        let bibtexData = '';
-        selectedCheckboxes.forEach(checkbox => {
-            const index = parseInt(checkbox.dataset.index);
-            const result = allResults[index];
-            bibtexData += generateBibTeX(result) + '\n\n';
-        });
-
-        showBibtexModal(bibtexData);
-    }
-
-    function showBibtexModal(bibtexData) {
-        bibtexContent.textContent = bibtexData;
-        bibtexModal.classList.remove('hidden');
-    }
-
-    function closeModal() {
-        bibtexModal.classList.add('hidden');
-    }
-
-    function copyModalBibtex() {
-        const bibtexText = bibtexContent.textContent;
-        navigator.clipboard.writeText(bibtexText).then(() => {
-            copyTooltip.textContent = 'Copied!';
-            setTimeout(() => {
-                copyTooltip.textContent = 'Copy to clipboard';
-            }, 2000);
-        }).catch(err => {
-            console.error('Error copying text: ', err);
-        });
-    }
-
-    // Close modal when clicking outside
-    window.addEventListener('click', function (event) {
-        if (event.target === bibtexModal) {
-            closeModal();
-        }
-    });
-
-    // Allow pressing Enter in search field
-    document.getElementById('searchQuery').addEventListener('keypress', function (event) {
-        if (event.key === 'Enter') {
-            searchBtn.click();
-        }
-    });
-</script>
-
+    </script>
 </body>
+
 </html>
-
-
- 
