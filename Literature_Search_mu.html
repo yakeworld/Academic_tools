@@ -1,0 +1,174 @@
+            <div class="mb-4">
+                <div class="text-sm text-gray-700 dark:text-gray-300 abstract-content">${safeAbstract}</div>
+            </div>
+            
+            <div class="flex flex-wrap gap-2 text-sm">
+                ${result.doi ? `
+                    <a href="https://doi.org/${result.doi}" target="_blank" rel="noopener noreferrer" 
+                       class="inline-flex items-center px-3 py-1 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-full">
+                        <span class="mr-1">DOI:</span> ${result.doi}
+                    </a>
+                ` : ''}
+                
+                ${result.id ? `
+                    <span class="inline-flex items-center px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-full">
+                        <span class="mr-1">ID:</span> ${result.id}
+                    </span>
+                ` : ''}
+                
+                ${result.citationCount ? `
+                    <span class="inline-flex items-center px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-full">
+                        <span class="mr-1">Citations:</span> ${result.citationCount}
+                    </span>
+                ` : ''}
+                
+                <a href="${result.url}" target="_blank" rel="noopener noreferrer" 
+                   class="inline-flex items-center px-3 py-1 bg-primary text-white hover:bg-opacity-90 rounded-full">
+                    View Article
+                </a>
+                
+                <button class="bibtex-btn inline-flex items-center px-3 py-1 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-full"
+                        data-bibtex="${encodeURIComponent(bibtex)}">
+                    BibTeX
+                </button>
+            </div>
+        `;
+
+        // Add event listener for BibTeX button
+        const bibtexBtn = div.querySelector('.bibtex-btn');
+        bibtexBtn.addEventListener('click', function () {
+            const bibtexData = decodeURIComponent(this.dataset.bibtex);
+            showBibtexModal(bibtexData);
+        });
+
+        return div;
+    }
+
+    // BibTeX Generation
+    function generateBibTeX(result) {
+        // Create a citation key
+        const firstAuthor = result.authors.length > 0 ? result.authors[0].split(' ').pop() : 'Unknown';
+        const year = result.year || 'NoYear';
+        const firstTitleWord = result.title.split(' ')[0].replace(/[^\w]/g, '');
+        const citationKey = `${firstAuthor}${year}${firstTitleWord}`;
+
+        let bibtex = `@${result.bibtexType}{${citationKey},\n`;
+
+        // Add authors
+        if (result.authors.length > 0) {
+            bibtex += `  author = {${result.authors.join(' and ')}},\n`;
+        }
+
+        // Add title
+        bibtex += `  title = {${result.title}},\n`;
+
+        // Add journal/publication venue
+        if (result.journal) {
+            bibtex += `  journal = {${result.journal}},\n`;
+        }
+
+        // Add year
+        if (result.year) {
+            bibtex += `  year = {${result.year}},\n`;
+        }
+
+        // Add volume, number, pages if available
+        if (result.volume) bibtex += `  volume = {${result.volume}},\n`;
+        if (result.issue) bibtex += `  number = {${result.issue}},\n`;
+        if (result.pages) bibtex += `  pages = {${result.pages}},\n`;
+
+        // Add DOI if available
+        if (result.doi) {
+            bibtex += `  doi = {${result.doi}},\n`;
+        }
+
+        // Add URL
+        if (result.url) {
+            bibtex += `  url = {${result.url}},\n`;
+        }
+
+        // Add source-specific identifiers
+        if (result.source === 'PubMed') {
+            bibtex += `  pmid = {${result.id}},\n`;
+        } else if (result.source === 'arXiv') {
+            bibtex += `  archivePrefix = {arXiv},\n`;
+            bibtex += `  eprint = {${result.id}},\n`;
+        }
+
+        // Close the entry
+        bibtex += `}`;
+
+        return bibtex;
+    }
+
+    // Selection functionality
+    function selectAllResults() {
+        const checkboxes = document.querySelectorAll('.result-checkbox');
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = true;
+        });
+    }
+
+    function clearSelection() {
+        const checkboxes = document.querySelectorAll('.result-checkbox');
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = false;
+        });
+    }
+
+    // BibTeX handling
+    function copySelectedBibtex() {
+        const selectedCheckboxes = document.querySelectorAll('.result-checkbox:checked');
+        if (selectedCheckboxes.length === 0) {
+            alert('Please select at least one result first');
+            return;
+        }
+
+        let bibtexData = '';
+        selectedCheckboxes.forEach(checkbox => {
+            const index = parseInt(checkbox.dataset.index);
+            const result = allResults[index];
+            bibtexData += generateBibTeX(result) + '\n\n';
+        });
+
+        showBibtexModal(bibtexData);
+    }
+
+    function showBibtexModal(bibtexData) {
+        bibtexContent.textContent = bibtexData;
+        bibtexModal.classList.remove('hidden');
+    }
+
+    function closeModal() {
+        bibtexModal.classList.add('hidden');
+    }
+
+    function copyModalBibtex() {
+        const bibtexText = bibtexContent.textContent;
+        navigator.clipboard.writeText(bibtexText).then(() => {
+            copyTooltip.textContent = 'Copied!';
+            setTimeout(() => {
+                copyTooltip.textContent = 'Copy to clipboard';
+            }, 2000);
+        }).catch(err => {
+            console.error('Error copying text: ', err);
+        });
+    }
+
+    // Close modal when clicking outside
+    window.addEventListener('click', function (event) {
+        if (event.target === bibtexModal) {
+            closeModal();
+        }
+    });
+
+    // Allow pressing Enter in search field
+    document.getElementById('searchQuery').addEventListener('keypress', function (event) {
+        if (event.key === 'Enter') {
+            searchBtn.click();
+        }
+    });
+</script>
+
+</body>
+</html>
