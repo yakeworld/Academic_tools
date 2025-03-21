@@ -9,3 +9,8 @@
 筛选精准： 支持关键词、作者、年份等多条件筛选，快速定位目标文献。
 BibTeX导出： 一键导出 BibTeX 格式，方便论文写作和文献管理。
 适用人群： 科研人员、研究生、学者等需要查阅学术文献的人群。
+
+3. [keywords_find](https://yakeworld.github.io/Academic_tools/keywords_find.html)
+关键词的组合是非常关键的，可以缩小检索范围，精准找到所需要的文献
+
+ 
