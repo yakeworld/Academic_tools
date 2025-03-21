@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Keyword Combination & Semantic Scholar Search Tool</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#5D5CDE',
+                    }
+                }
+            }
+        }
+
+        // Check for dark mode preference
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            if (event.matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        });
+    </script>
+</head>
+<body class="min-h-screen bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200">
+    <div class="container mx-auto p-4 max-w-4xl">
+        <header class="mb-8">
+            <h1 class="text-3xl font-bold text-primary mb-2">Keyword Combination & Semantic Scholar Search Tool</h1>
+            <p class="text-gray-600 dark:text-gray-400">Search academic literature using keyword combinations</p>
+        </header>
+
+        <!-- Keyword Management Section -->
+        <div id="keywordSection" class="mb-8 bg-gray-50 dark:bg-gray-900 p-6 rounded-lg shadow-md">
+            <h2 class="text-xl font-semibold mb-4 border-b pb-2 border-gray-200 dark:border-gray-700">Keyword Management</h2>
+
+            <!-- Primary Keywords -->
+            <div class="mb-6">
+                <div class="flex justify-between items-center mb-2">
+                    <h3 class="font-medium text-lg">Primary Keywords</h3>
+                    <button id="addPrimaryBtn" class="text-primary dark:text-blue-400 text-sm hover:underline">+ Add Keyword</button>
+                </div>
+                <div id="primaryKeywords" class="flex flex-wrap gap-2 min-h-[40px]"></div>
+                <div id="addPrimaryForm" class="hidden mt-2">
+                    <div class="flex gap-2">
+                        <input type="text" id="newPrimaryKeyword" class="flex-grow p-2 border text-base bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 rounded-md border-gray-300 dark:border-gray-700" placeholder="Enter new keyword">
+                        <button id="savePrimaryBtn" class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-md">Add</button>
+                        <button id="cancelPrimaryBtn" class="bg-gray-400 dark:bg-gray-600 hover:bg-gray-500 dark:hover:bg-gray-700 text-white px-3 py-2 rounded-md">Cancel</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Secondary Keywords -->
+            <div class="mb-6">
+                <div class="flex justify-between items-center mb-2">
+                    <h3 class="font-medium text-lg">Secondary Keywords</h3>
+                    <button id="addSecondaryBtn" class="text-primary dark:text-blue-400 text-sm hover:underline">+ Add Keyword</button>
+                </div>
+                <div id="secondaryKeywords" class="flex flex-wrap gap-2 min-h-[40px]"></div>
+                <div id="addSecondaryForm" class="hidden mt-2">
+                    <div class="flex gap-2">
+                        <input type="text" id="newSecondaryKeyword" class="flex-grow p-2 border text-base bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 rounded-md border-gray-300 dark:border-gray-700" placeholder="Enter new keyword">
+                        <button id="saveSecondaryBtn" class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-md">Add</button>
+                        <button id="cancelSecondaryBtn" class="bg-gray-400 dark:bg-gray-600 hover:bg-gray-500 dark:hover:bg-gray-700 text-white px-3 py-2 rounded-md">Cancel</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Keyword Combination & Search -->
+            <div>
+                <div class="flex flex-wrap gap-3 mt-4">
+                    <button id="generateCombinationsBtn" class="bg-primary hover:bg-primary/90 text-white font-semibold py-2 px-4 rounded-md transition duration-200">
+                        Generate & Test Combinations
+                    </button>
+                    <div id="generationLoader" class="hidden flex items-center gap-2">
+                        <div class="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-primary"></div>
+                        <span id="generationStatus">Processing...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div id="resultsSection" class="hidden mb-8 bg-gray-50 dark:bg-gray-900 p-6 rounded-lg shadow-md">
+            <h2 class="text-xl font-semibold mb-4 border-b pb-2 border-gray-200 dark:border-gray-700">Valid Keyword Combinations</h2>
+            <div id="combinationResults" class="space-y-4">
+                <!-- Results will be added here -->
+            </div>
+
+            <div class="mt-4">
+                <h3 class="text-lg font-semibold mb-2">Exported Combinations:</h3>
+                <textarea id="exportedCombinations" rows="4" class="w-full p-3 border rounded-md text-base bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-primary resize-none" readonly></textarea>
+            </div>
+
+            <div id="error" class="hidden bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 p-4 rounded-lg mb-8">
+                <p id="errorMessage"></p>
+            </div>
+        </div>
+
+
+    </div>
+
+    <script>
+        // State management
+        const state = {
+            primaryKeywords: [],
+            secondaryKeywords: [],
+            validCombinations: [],
+            inProgress: false
+        };
+
+        // DOM Elements
+        const keywordSection = document.getElementById('keywordSection');
+        const resultsSection = document.getElementById('resultsSection');
+        const primaryKeywordsContainer = document.getElementById('primaryKeywords');
+        const secondaryKeywordsContainer = document.getElementById('secondaryKeywords');
+        const addPrimaryBtn = document.getElementById('addPrimaryBtn');
+        const addSecondaryBtn = document.getElementById('addSecondaryBtn');
+        const addPrimaryForm = document.getElementById('addPrimaryForm');
+        const addSecondaryForm = document.getElementById('addSecondaryForm');
+        const newPrimaryKeyword = document.getElementById('newPrimaryKeyword');
+        const newSecondaryKeyword = document.getElementById('newSecondaryKeyword');
+        const savePrimaryBtn = document.getElementById('savePrimaryBtn');
+        const saveSecondaryBtn = document.getElementById('saveSecondaryBtn');
+        const cancelPrimaryBtn = document.getElementById('cancelPrimaryBtn');
+        const cancelSecondaryBtn = document.getElementById('cancelSecondaryBtn');
+        const generateCombinationsBtn = document.getElementById('generateCombinationsBtn');
+        const generationLoader = document.getElementById('generationLoader');
+        const generationStatus = document.getElementById('generationStatus');
+        const combinationResults = document.getElementById('combinationResults');
+        const exportedCombinations = document.getElementById('exportedCombinations');
+        const error = document.getElementById('error');
+        const errorMessage = document.getElementById('errorMessage');
+
+        // Render keywords function
+        function renderKeywords() {
+            // Render primary keywords
+            primaryKeywordsContainer.innerHTML = '';
+            state.primaryKeywords.forEach((keyword, index) => {
+                const chip = createKeywordChip(keyword, 'primary', index);
+                primaryKeywordsContainer.appendChild(chip);
+            });
+
+            // Render secondary keywords
+            secondaryKeywordsContainer.innerHTML = '';
+            state.secondaryKeywords.forEach((keyword, index) => {
+                const chip = createKeywordChip(keyword, 'secondary', index);
+                secondaryKeywordsContainer.appendChild(chip);
+            });
+
+            keywordSection.classList.remove('hidden');  // Show keyword section after keywords are rendered.
+        }
+
+        // Create keyword chip element
+        function createKeywordChip(keyword, type, index) {
+            const chip = document.createElement('div');
+            chip.className = 'keyword-chip flex items-center bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-3 py-1 rounded-full';
+
+            const text = document.createElement('span');
+            text.textContent = keyword;
+            text.className = 'mr-2';
+
+            const removeBtn = document.createElement('button');
+            removeBtn.innerHTML = '×';
+            removeBtn.className = 'text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400';
+            removeBtn.addEventListener('click', () => {
+                if (type === 'primary') {
+                    state.primaryKeywords.splice(index, 1);
+                } else {
+                    state.secondaryKeywords.splice(index, 1);
+                }
+                renderKeywords();
+            });
+
+            chip.appendChild(text);
+            chip.appendChild(removeBtn);
+            return chip;
+        }
+
+        // Add keyword handlers
+        addPrimaryBtn.addEventListener('click', () => {
+            addPrimaryForm.classList.remove('hidden');
+            newPrimaryKeyword.focus();
+        });
+
+        addSecondaryBtn.addEventListener('click', () => {
+            addSecondaryForm.classList.remove('hidden');
+            newSecondaryKeyword.focus();
+        });
+
+        savePrimaryBtn.addEventListener('click', () => {
+            const keyword = newPrimaryKeyword.value.trim();
+            if (keyword) {
+                state.primaryKeywords.push(keyword);
+                renderKeywords();
+                newPrimaryKeyword.value = '';
+                addPrimaryForm.classList.add('hidden');
+            }
+        });
+
+        saveSecondaryBtn.addEventListener('click', () => {
+            const keyword = newSecondaryKeyword.value.trim();
+            if (keyword) {
+                state.secondaryKeywords.push(keyword);
+                renderKeywords();
+                newSecondaryKeyword.value = '';
+                addSecondaryForm.classList.add('hidden');
+            }
+        });
+
+        cancelPrimaryBtn.addEventListener('click', () => {
+            newPrimaryKeyword.value = '';
+            addPrimaryForm.classList.add('hidden');
+        });
+
+        cancelSecondaryBtn.addEventListener('click', () => {
+            newSecondaryKeyword.value = '';
+            addSecondaryForm.classList.add('hidden');
+        });
+
+        // Enter key handling for forms
+        newPrimaryKeyword.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                savePrimaryBtn.click();
+            }
+        });
+
+        newSecondaryKeyword.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                saveSecondaryBtn.click();
+            }
+        });
+
+        // Generate and test keyword combinations
+        generateCombinationsBtn.addEventListener('click', async function() {
+            if (state.primaryKeywords.length === 0 && state.secondaryKeywords.length === 0) {
+                alert('Please add at least one keyword first.');
+                return;
+            }
+
+            generateCombinationsBtn.disabled = true;
+            generationLoader.classList.remove('hidden');
+            state.validCombinations = [];
+            state.inProgress = true;
+
+            // Get all keywords
+            const allKeywords = [...state.primaryKeywords, ...state.secondaryKeywords];
+
+            // Generate combinations (at least one keyword)
+             const combinations = [];
+            for (let i = 1; i <= allKeywords.length; i++) {
+                const combos = getCombinations(allKeywords, i);
+                combinations.push(...combos);
+            }
+
+
+            // Test combinations sequentially
+            let currentIndex = 0;
+            let totalCombinations = combinations.length;
+
+            resultsSection.classList.remove('hidden');
+            combinationResults.innerHTML = '<p class="text-center text-gray-500 dark:text-gray-400">Testing keyword combinations...</p>';
+
+            const testNextCombination = async () => {
+                if (!state.inProgress || currentIndex >= combinations.length) {
+                    generateCombinationsBtn.disabled = false;
+                    generationLoader.classList.add('hidden');
+                    state.inProgress = false;
+
+                    if (state.validCombinations.length === 0) {
+                        combinationResults.innerHTML = '<p class="text-center text-gray-500 dark:text-gray-400">No valid combinations found.</p>';
+                    }
+
+                    // Display the exported combinations after processing
+                    displayExportedCombinations();
+
+                    return;
+                }
+
+                const combination = combinations[currentIndex];
+                currentIndex++;
+
+                // Update status
+                generationStatus.textContent = `Testing combination ${currentIndex}/${totalCombinations}`;
+
+                // Skip if this combination is a subset of an already validated combination
+                if (isSubsetOfExistingCombination(combination)) {
+                    setTimeout(testNextCombination, 10); // Process next combination quickly
+                    return;
+                }
+
+                try {
+                    const results = await testCombinationWithSemanticScholar(combination);
+
+                    // If valid (between 1 and 100 results), add to valid combinations
+                    if (results <= 100) {
+                        state.validCombinations.push(combination);
+                        renderValidCombination(combination,results);
+                    }
+
+                    // Delay before the next request
+                    await delay(2000); // Delay 2 seconds
+
+                    testNextCombination(); // Call the function to process the next combination
+
+                } catch (e) {
+                    console.error("Error testing combination:", e);
+                    setTimeout(testNextCombination, 1000); // Longer delay if there was an error
+                    showError(e.message);
+                     await delay(2000); // Delay 2 seconds
+
+                     testNextCombination();
+                }
+            };
+
+            // Start the process
+            testNextCombination();
+        });
+
+        // Function to display the exported combinations in the textarea
+        function displayExportedCombinations() {
+            const exportedString = state.validCombinations
+                .map(combo => combo.join(','))
+                .join(';');
+            exportedCombinations.value = exportedString; // Set the textarea value
+        }
+
+        // Function to generate combinations
+        function getCombinations(array, k) {
+            if (k > array.length || k <= 0) {
+                return [];
+            }
+
+            if (k === array.length) {
+                return [array];
+            }
+
+            if (k === 1) {
+                return array.map(item => [item]);
+            }
+
+            const combinations = [];
+            for (let i = 0; i <= array.length - k; i++) {
+                const subArray = array.slice(i + 1);
+                const subCombinations = getCombinations(subArray, k - 1);
+                for (const subCombination of subCombinations) {
+                    combinations.push([array[i], ...subCombination]);
+                }
+            }
+            return combinations;
+        }
+
+        // Check if a combination is a subset of an existing valid combination
+        function isSubsetOfExistingCombination(combination) {
+            return state.validCombinations.some(validCombo => {
+                return isSubset(combination, validCombo);
+            });
+        }
+
+        // Check if array1 is a subset of array2
+        function isSubset(array1, array2) {
+            return array1.every(element => array2.includes(element));
+        }
+
+        // Delay function for rate limiting
+        function delay(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+
+        // Test a keyword combination with Semantic Scholar API
+        async function testCombinationWithSemanticScholar(keywords) {
+             return new Promise((resolve, reject) => {
+                const query = keywords.join(" "); // Join keywords with space for Semantic Scholar
+
+                // Construct the Semantic Scholar API URL (replace with the actual API endpoint)
+                const apiUrl = `https://api.semanticscholar.org/graph/v1/paper/search?query=${encodeURIComponent(query)}&limit=10`;
+
+                const xhr = new XMLHttpRequest();
+                xhr.open('GET', apiUrl);
+                xhr.setRequestHeader('X-API-KEY', 'YOUR_API_KEY');  // Optional: Replace YOUR_API_KEY if required
+
+                xhr.timeout = 10000; // 10 seconds
+
+                xhr.onload = function() {
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        try {
+                            const response = JSON.parse(xhr.responseText);
+                             const totalResults = response.total || response.data.length;
+
+                             resolve(totalResults);
+
+                        } catch (e) {
+                            reject(new Error('Failed to parse Semantic Scholar API response: ' + e.message));
+                        }
+                    } else {
+                        reject(new Error(`Semantic Scholar API returned status code: ${xhr.status}`));
+                    }
+                };
+
+                xhr.onerror = function() {
+                    reject(new Error('Network error occurred while calling Semantic Scholar API. Check CORS settings and network connection.'));
+                };
+
+                 xhr.ontimeout = function() {
+                   reject(new Error('Semantic Scholar API request timed out. The service might be unresponsive.'));
+                };
+
+
+                try {
+                    xhr.send();
+                } catch (e) {
+                    reject(new Error('Error sending request to Semantic Scholar API: ' + e.message));
+                }
+            });
+        }
+
+
+        // Render a valid combination in the results section
+        function renderValidCombination(combo, resultCount) {
+            // Clear initial message if present
+            if (combinationResults.querySelector('p.text-center')) {
+                combinationResults.innerHTML = '';
+            }
+
+            const comboElement = document.createElement('div');
+            comboElement.className = 'p-6 border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-md transition duration-200 mb-6';
+
+            // Combination header
+            const header = document.createElement('h3');
+            header.className = 'font-semibold text-lg mb-2';
+            header.textContent = combo.join(', ');
+
+            const resultInfo = document.createElement('p');
+            resultInfo.className = 'text-gray-600 dark:text-gray-400';
+            resultInfo.textContent = `Semantic Scholar Results: ${resultCount}`;
+
+            comboElement.appendChild(header);
+            comboElement.appendChild(resultInfo);
+            combinationResults.appendChild(comboElement);
+        }
+
+         function showError(message) {
+            errorMessage.textContent = message;
+            error.classList.remove('hidden');
+        }
+
+        // Initial render of keywords if there are any in state.
+        renderKeywords();
+    </script>
+</body>
+</html>
