@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Keyword Combination & Semantic Scholar Search Tool</title>
+    <title>Keyword Extraction and Combination Tool</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -16,12 +17,153 @@
                 }
             }
         }
+    </script>
+    <style>
+        /* Custom scrollbar */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
 
-        // Check for dark mode preference
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        .dark .custom-scrollbar::-webkit-scrollbar-track {
+            background: #2d2d2d;
+        }
+
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #666;
+        }
+
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #888;
+        }
+    </style>
+</head>
+
+<body class="bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-6xl">
+        <h1 class="text-3xl font-bold text-center mb-6 text-primary">关键词提取和组合工具</h1>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Keywords Input Section -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold mb-4">关键词管理</h2>
+
+                <!-- Primary Keywords -->
+                <div class="mb-6">
+                    <h3 class="text-lg font-medium mb-2">主要关键词 (逗号分隔)</h3>
+                    <div class="flex mb-2">
+                        <input type="text" id="primaryKeywordInput"
+                            class="w-full rounded-l-md border border-gray-300 dark:border-gray-600 dark:bg-gray-700 px-4 py-2 text-base"
+                            placeholder="输入主要关键词，以逗号分隔">
+                        <button id="addPrimaryKeyword"
+                            class="bg-primary hover:bg-primary/80 text-white px-4 py-2 rounded-r-md transition">添加</button>
+                    </div>
+                    <div id="primaryKeywords" class="flex flex-wrap gap-2 min-h-12 mt-2"></div>
+                </div>
+
+                <!-- Secondary Keywords -->
+                <div class="mb-6">
+                    <h3 class="text-lg font-medium mb-2">次要关键词 (逗号分隔)</h3>
+                    <div class="flex mb-2">
+                        <input type="text" id="secondaryKeywordInput"
+                            class="w-full rounded-l-md border border-gray-300 dark:border-gray-600 dark:bg-gray-700 px-4 py-2 text-base"
+                            placeholder="输入次要关键词，以逗号分隔">
+                        <button id="addSecondaryKeyword"
+                            class="bg-primary hover:bg-primary/80 text-white px-4 py-2 rounded-r-md transition">添加</button>
+                    </div>
+                    <div id="secondaryKeywords" class="flex flex-wrap gap-2 min-h-12 mt-2"></div>
+                </div>
+
+                <!-- Combination Controls -->
+                <div class="flex flex-wrap gap-2 mt-4">
+                    <label for="maxResults">最大结果数:</label>
+                    <input type="number" id="maxResults" name="maxResults" value="100" min="1" max="1000"
+                        class="w-24 rounded-md border border-gray-300 dark:border-gray-600 dark:bg-gray-700 px-2 py-1 text-base">
+                    <button id="generateCombinations"
+                        class="bg-primary hover:bg-primary/80 text-white px-4 py-2 rounded-md transition">生成组合</button>
+                    <button id="runSearch"
+                        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition">运行搜索</button>
+                    <button id="exportCombinations"
+                        class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md transition">导出有效组合</button>
+                    <button id="clearAll"
+                        class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md transition">清除所有</button>
+                </div>
+            </div>
+
+            <!-- Results Section -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold mb-4">检索与结果</h2>
+
+                <!-- Current Search -->
+                <div class="mb-4">
+                    <h3 class="text-lg font-medium mb-2">当前检索</h3>
+                    <div id="currentSearch" class="bg-gray-100 dark:bg-gray-700 p-3 rounded-md min-h-12 flex items-center">
+                        未开始检索
+                    </div>
+                </div>
+
+                <!-- Search Status -->
+                <div class="mb-4">
+                    <h3 class="text-lg font-medium mb-2">检索状态</h3>
+                    <div id="searchStatus" class="bg-gray-100 dark:bg-gray-700 p-3 rounded-md">
+                        等待开始检索...
+                    </div>
+                </div>
+
+                <!-- Results Count -->
+                <div class="mb-4">
+                    <h3 class="text-lg font-medium mb-2">检索结果数</h3>
+                    <div id="resultsCount" class="text-2xl font-bold text-primary">
+                        0
+                    </div>
+                </div>
+                <!-- Generated Combinations -->
+                <div class="mb-4">
+                    <h3 class="text-lg font-medium mb-2">生成的关键词组合</h3>
+                    <div id="generatedCombinations" class="bg-gray-100 dark:bg-gray-700 p-3 rounded-md">
+                        尚未生成组合
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Valid Combinations -->
+        <div class="mt-6 bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+            <h2 class="text-xl font-semibold mb-4">有效关键词组合</h2>
+            <div id="validCombinations"
+                class="bg-gray-100 dark:bg-gray-700 p-4 rounded-md min-h-32 max-h-96 overflow-y-auto custom-scrollbar">
+                尚无有效组合
+            </div>
+        </div>
+
+        <!-- arXiv Results -->
+        <div class="mt-6 bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+            <h2 class="text-xl font-semibold mb-4">arXiv 检索结果</h2>
+            <div id="arxivResults"
+                class="bg-gray-100 dark:bg-gray-700 p-4 rounded-md min-h-32 max-h-96 overflow-y-auto custom-scrollbar">
+                尚无检索结果
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Check dark mode preference
         if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
             document.documentElement.classList.add('dark');
         }
-
         window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
             if (event.matches) {
                 document.documentElement.classList.add('dark');
@@ -29,432 +171,604 @@
                 document.documentElement.classList.remove('dark');
             }
         });
-    </script>
-</head>
-<body class="min-h-screen bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200">
-    <div class="container mx-auto p-4 max-w-4xl">
-        <header class="mb-8">
-            <h1 class="text-3xl font-bold text-primary mb-2">Keyword Combination & Semantic Scholar Search Tool</h1>
-            <p class="text-gray-600 dark:text-gray-400">Search academic literature using keyword combinations</p>
-        </header>
 
-        <!-- Keyword Management Section -->
-        <div id="keywordSection" class="mb-8 bg-gray-50 dark:bg-gray-900 p-6 rounded-lg shadow-md">
-            <h2 class="text-xl font-semibold mb-4 border-b pb-2 border-gray-200 dark:border-gray-700">Keyword Management</h2>
-
-            <!-- Primary Keywords -->
-            <div class="mb-6">
-                <div class="flex justify-between items-center mb-2">
-                    <h3 class="font-medium text-lg">Primary Keywords</h3>
-                    <button id="addPrimaryBtn" class="text-primary dark:text-blue-400 text-sm hover:underline">+ Add Keyword</button>
-                </div>
-                <div id="primaryKeywords" class="flex flex-wrap gap-2 min-h-[40px]"></div>
-                <div id="addPrimaryForm" class="hidden mt-2">
-                    <div class="flex gap-2">
-                        <input type="text" id="newPrimaryKeyword" class="flex-grow p-2 border text-base bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 rounded-md border-gray-300 dark:border-gray-700" placeholder="Enter new keyword">
-                        <button id="savePrimaryBtn" class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-md">Add</button>
-                        <button id="cancelPrimaryBtn" class="bg-gray-400 dark:bg-gray-600 hover:bg-gray-500 dark:hover:bg-gray-700 text-white px-3 py-2 rounded-md">Cancel</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Secondary Keywords -->
-            <div class="mb-6">
-                <div class="flex justify-between items-center mb-2">
-                    <h3 class="font-medium text-lg">Secondary Keywords</h3>
-                    <button id="addSecondaryBtn" class="text-primary dark:text-blue-400 text-sm hover:underline">+ Add Keyword</button>
-                </div>
-                <div id="secondaryKeywords" class="flex flex-wrap gap-2 min-h-[40px]"></div>
-                <div id="addSecondaryForm" class="hidden mt-2">
-                    <div class="flex gap-2">
-                        <input type="text" id="newSecondaryKeyword" class="flex-grow p-2 border text-base bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 rounded-md border-gray-300 dark:border-gray-700" placeholder="Enter new keyword">
-                        <button id="saveSecondaryBtn" class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-md">Add</button>
-                        <button id="cancelSecondaryBtn" class="bg-gray-400 dark:bg-gray-600 hover:bg-gray-500 dark:hover:bg-gray-700 text-white px-3 py-2 rounded-md">Cancel</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Keyword Combination & Search -->
-            <div>
-                <div class="flex flex-wrap gap-3 mt-4">
-                    <button id="generateCombinationsBtn" class="bg-primary hover:bg-primary/90 text-white font-semibold py-2 px-4 rounded-md transition duration-200">
-                        Generate & Test Combinations
-                    </button>
-                    <div id="generationLoader" class="hidden flex items-center gap-2">
-                        <div class="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-primary"></div>
-                        <span id="generationStatus">Processing...</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Results Section -->
-        <div id="resultsSection" class="hidden mb-8 bg-gray-50 dark:bg-gray-900 p-6 rounded-lg shadow-md">
-            <h2 class="text-xl font-semibold mb-4 border-b pb-2 border-gray-200 dark:border-gray-700">Valid Keyword Combinations</h2>
-            <div id="combinationResults" class="space-y-4">
-                <!-- Results will be added here -->
-            </div>
-
-            <div class="mt-4">
-                <h3 class="text-lg font-semibold mb-2">Exported Combinations:</h3>
-                <textarea id="exportedCombinations" rows="4" class="w-full p-3 border rounded-md text-base bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-primary resize-none" readonly></textarea>
-            </div>
-
-            <div id="error" class="hidden bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 p-4 rounded-lg mb-8">
-                <p id="errorMessage"></p>
-            </div>
-        </div>
-
-
-    </div>
-
-    <script>
-        // State management
+        // Initialize app state
         const state = {
             primaryKeywords: [],
             secondaryKeywords: [],
             validCombinations: [],
-            inProgress: false
+            currentCombination: [],
+            searchInProgress: false,
+            maxResults: 100, // Default max results
+            generatedCombinations: []
         };
 
-        // DOM Elements
-        const keywordSection = document.getElementById('keywordSection');
-        const resultsSection = document.getElementById('resultsSection');
-        const primaryKeywordsContainer = document.getElementById('primaryKeywords');
-        const secondaryKeywordsContainer = document.getElementById('secondaryKeywords');
-        const addPrimaryBtn = document.getElementById('addPrimaryBtn');
-        const addSecondaryBtn = document.getElementById('addSecondaryBtn');
-        const addPrimaryForm = document.getElementById('addPrimaryForm');
-        const addSecondaryForm = document.getElementById('addSecondaryForm');
-        const newPrimaryKeyword = document.getElementById('newPrimaryKeyword');
-        const newSecondaryKeyword = document.getElementById('newSecondaryKeyword');
-        const savePrimaryBtn = document.getElementById('savePrimaryBtn');
-        const saveSecondaryBtn = document.getElementById('saveSecondaryBtn');
-        const cancelPrimaryBtn = document.getElementById('cancelPrimaryBtn');
-        const cancelSecondaryBtn = document.getElementById('cancelSecondaryBtn');
-        const generateCombinationsBtn = document.getElementById('generateCombinationsBtn');
-        const generationLoader = document.getElementById('generationLoader');
-        const generationStatus = document.getElementById('generationStatus');
-        const combinationResults = document.getElementById('combinationResults');
-        const exportedCombinations = document.getElementById('exportedCombinations');
-        const error = document.getElementById('error');
-        const errorMessage = document.getElementById('errorMessage');
+        // DOM elements
+        const elements = {
+            primaryKeywordInput: document.getElementById('primaryKeywordInput'),
+            secondaryKeywordInput: document.getElementById('secondaryKeywordInput'),
+            primaryKeywords: document.getElementById('primaryKeywords'),
+            secondaryKeywords: document.getElementById('secondaryKeywords'),
+            generateCombinations: document.getElementById('generateCombinations'),
+            runSearch: document.getElementById('runSearch'),
+            exportCombinations: document.getElementById('exportCombinations'),
+            clearAll: document.getElementById('clearAll'),
+            currentSearch: document.getElementById('currentSearch'),
+            searchStatus: document.getElementById('searchStatus'),
+            resultsCount: document.getElementById('resultsCount'),
+            validCombinations: document.getElementById('validCombinations'),
+            arxivResults: document.getElementById('arxivResults'),
+            addPrimaryKeyword: document.getElementById('addPrimaryKeyword'),
+            addSecondaryKeyword: document.getElementById('addSecondaryKeyword'),
+            maxResultsInput: document.getElementById('maxResults'),
+            generatedCombinationsDiv: document.getElementById('generatedCombinations')
+        };
 
-        // Render keywords function
-        function renderKeywords() {
-            // Render primary keywords
-            primaryKeywordsContainer.innerHTML = '';
-            state.primaryKeywords.forEach((keyword, index) => {
-                const chip = createKeywordChip(keyword, 'primary', index);
-                primaryKeywordsContainer.appendChild(chip);
+        // Initialize event listeners
+        function initEventListeners() {
+            // Add primary keyword
+            elements.addPrimaryKeyword.addEventListener('click', () => {
+                addKeywords('primary');
+            });
+            elements.primaryKeywordInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') addKeywords('primary');
             });
 
-            // Render secondary keywords
-            secondaryKeywordsContainer.innerHTML = '';
-            state.secondaryKeywords.forEach((keyword, index) => {
-                const chip = createKeywordChip(keyword, 'secondary', index);
-                secondaryKeywordsContainer.appendChild(chip);
+            // Add secondary keyword
+            elements.addSecondaryKeyword.addEventListener('click', () => {
+                addKeywords('secondary');
+            });
+            elements.secondaryKeywordInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') addKeywords('secondary');
             });
 
-            keywordSection.classList.remove('hidden');  // Show keyword section after keywords are rendered.
+            // Generate combinations
+            elements.generateCombinations.addEventListener('click', displayGeneratedCombinations);
+
+            // Run Search
+            elements.runSearch.addEventListener('click', startCombinationProcess);
+
+            // Export combinations
+            elements.exportCombinations.addEventListener('click', exportCombinations);
+
+            // Clear all
+            elements.clearAll.addEventListener('click', clearAll);
+
+            // Max Results Input Change
+            elements.maxResultsInput.addEventListener('change', updateMaxResults);
         }
 
-        // Create keyword chip element
-        function createKeywordChip(keyword, type, index) {
-            const chip = document.createElement('div');
-            chip.className = 'keyword-chip flex items-center bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-3 py-1 rounded-full';
+        // Add keywords to the state and UI
+        function addKeywords(type) {
+            const inputElement = type === 'primary' ? elements.primaryKeywordInput : elements.secondaryKeywordInput;
+            const keywords = inputElement.value.trim();
 
-            const text = document.createElement('span');
-            text.textContent = keyword;
-            text.className = 'mr-2';
+            if (keywords) {
+                const keywordList = type === 'primary' ? state.primaryKeywords : state.secondaryKeywords;
+                const newKeywords = keywords.split(',').map(keyword => keyword.trim()).filter(keyword => keyword !==
+                    '');  // Split by comma, trim, and filter out empty strings
 
-            const removeBtn = document.createElement('button');
-            removeBtn.innerHTML = '×';
-            removeBtn.className = 'text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400';
-            removeBtn.addEventListener('click', () => {
-                if (type === 'primary') {
-                    state.primaryKeywords.splice(index, 1);
-                } else {
-                    state.secondaryKeywords.splice(index, 1);
-                }
-                renderKeywords();
-            });
+                newKeywords.forEach(keyword => {
+                    if (!keywordList.includes(keyword)) {
+                        keywordList.push(keyword);
+                    }
+                });
 
-            chip.appendChild(text);
-            chip.appendChild(removeBtn);
-            return chip;
+                renderKeywords(type);
+                inputElement.value = '';
+            }
         }
 
-        // Add keyword handlers
-        addPrimaryBtn.addEventListener('click', () => {
-            addPrimaryForm.classList.remove('hidden');
-            newPrimaryKeyword.focus();
-        });
 
-        addSecondaryBtn.addEventListener('click', () => {
-            addSecondaryForm.classList.remove('hidden');
-            newSecondaryKeyword.focus();
-        });
+        // Render keywords in the UI
+        function renderKeywords(type) {
+            const container = type === 'primary' ? elements.primaryKeywords : elements.secondaryKeywords;
+            const keywordList = type === 'primary' ? state.primaryKeywords : state.secondaryKeywords;
 
-        savePrimaryBtn.addEventListener('click', () => {
-            const keyword = newPrimaryKeyword.value.trim();
-            if (keyword) {
-                state.primaryKeywords.push(keyword);
-                renderKeywords();
-                newPrimaryKeyword.value = '';
-                addPrimaryForm.classList.add('hidden');
-            }
-        });
+            container.innerHTML = '';
 
-        saveSecondaryBtn.addEventListener('click', () => {
-            const keyword = newSecondaryKeyword.value.trim();
-            if (keyword) {
-                state.secondaryKeywords.push(keyword);
-                renderKeywords();
-                newSecondaryKeyword.value = '';
-                addSecondaryForm.classList.add('hidden');
-            }
-        });
-
-        cancelPrimaryBtn.addEventListener('click', () => {
-            newPrimaryKeyword.value = '';
-            addPrimaryForm.classList.add('hidden');
-        });
-
-        cancelSecondaryBtn.addEventListener('click', () => {
-            newSecondaryKeyword.value = '';
-            addSecondaryForm.classList.add('hidden');
-        });
-
-        // Enter key handling for forms
-        newPrimaryKeyword.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                savePrimaryBtn.click();
-            }
-        });
-
-        newSecondaryKeyword.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                saveSecondaryBtn.click();
-            }
-        });
-
-        // Generate and test keyword combinations
-        generateCombinationsBtn.addEventListener('click', async function() {
-            if (state.primaryKeywords.length === 0 && state.secondaryKeywords.length === 0) {
-                alert('Please add at least one keyword first.');
+            if (keywordList.length === 0) {
+                container.innerHTML = '<span class="text-gray-500 dark:text-gray-400">尚未添加关键词</span>';
                 return;
             }
 
-            generateCombinationsBtn.disabled = true;
-            generationLoader.classList.remove('hidden');
-            state.validCombinations = [];
-            state.inProgress = true;
+            keywordList.forEach((keyword, index) => {
+                const keywordElement = document.createElement('div');
+                keywordElement.className = 'flex items-center bg-gray-200 dark:bg-gray-700 rounded-md px-3 py-1';
+                keywordElement.innerHTML = `
+                    <span class="mr-2">${keyword}</span>
+                    <button class="text-gray-500 hover:text-red-500 transition" data-index="${index}">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                `;
 
-            // Get all keywords
-            const allKeywords = [...state.primaryKeywords, ...state.secondaryKeywords];
+                const deleteButton = keywordElement.querySelector('button');
+                deleteButton.addEventListener('click', () => {
+                    keywordList.splice(index, 1);
+                    renderKeywords(type);
+                });
 
-            // Generate combinations (at least one keyword)
-             const combinations = [];
-            for (let i = 1; i <= allKeywords.length; i++) {
-                const combos = getCombinations(allKeywords, i);
-                combinations.push(...combos);
+                container.appendChild(keywordElement);
+            });
+        }
+
+        // Update max results from input
+        function updateMaxResults() {
+            const value = parseInt(elements.maxResultsInput.value, 10);
+            if (!isNaN(value) && value > 0 && value <= 1000) {
+                state.maxResults = value;
+            } else {
+                // Reset to default if invalid
+                state.maxResults = 100;
+                elements.maxResultsInput.value = 100;
+                alert('请输入 1 到 1000 之间的有效数字。');
+            }
+        }
+
+       // Function to display generated combinations without running the search
+        function displayGeneratedCombinations() {
+            state.generatedCombinations = generateKeywordCombinations(); // Generate combinations
+
+            let combinationText = '';
+            if (state.generatedCombinations.length > 0) {
+                combinationText = state.generatedCombinations.map(comb => comb.join(', ')).join('<br>');
+            } else {
+                combinationText = "没有生成任何组合";
             }
 
+            elements.generatedCombinationsDiv.innerHTML = combinationText;  //Display all the generated combination
+        }
 
-            // Test combinations sequentially
-            let currentIndex = 0;
-            let totalCombinations = combinations.length;
+        // Start the combination generation and search process
+        function startCombinationProcess() {
+            if (state.searchInProgress) {
+                alert('请等待当前检索完成');
+                return;
+            }
 
-            resultsSection.classList.remove('hidden');
-            combinationResults.innerHTML = '<p class="text-center text-gray-500 dark:text-gray-400">Testing keyword combinations...</p>';
+            if (state.primaryKeywords.length === 0) {
+                alert('请至少添加一个主要关键词');
+                return;
+            }
 
-            const testNextCombination = async () => {
-                if (!state.inProgress || currentIndex >= combinations.length) {
-                    generateCombinationsBtn.disabled = false;
-                    generationLoader.classList.add('hidden');
-                    state.inProgress = false;
+            state.searchInProgress = true;
+            elements.searchStatus.textContent = '开始生成组合并检索...';
+            elements.currentSearch.textContent = '准备中...';
+            elements.arxivResults.innerHTML = '<span class="text-gray-500 dark:text-gray-400">尚无检索结果</span>';
 
-                    if (state.validCombinations.length === 0) {
-                        combinationResults.innerHTML = '<p class="text-center text-gray-500 dark:text-gray-400">No valid combinations found.</p>';
-                    }
+            // Process each combination
+            processCombinations(state.generatedCombinations);  // search only to generated combinations
+        }
 
-                    // Display the exported combinations after processing
-                    displayExportedCombinations();
+         // Generate all possible keyword combinations
+        function generateKeywordCombinations() {
+             const combinations = [];
+             const allKeywords = [...state.primaryKeywords, ...state.secondaryKeywords];
 
-                    return;
+             // Function to generate combinations recursively
+             function combine(arr, k, start, current, allCombinations) {
+                 if (k === 0) {
+                     allCombinations.push([...current]);
+                     return;
+                 }
+
+                 for (let i = start; i < arr.length; i++) {
+                     current.push(arr[i]);
+                     combine(arr, k - 1, i + 1, current, allCombinations);
+                     current.pop();
+                 }
+             }
+
+              // Generate combinations of different lengths, ensuring at least one primary keyword is included in each
+             for (let k = 1; k <= Math.min(allKeywords.length, 5); k++) { // Limit combination length to prevent excessive computations
+                 for (let i = 0; i < state.primaryKeywords.length; i++) {
+                     let initialCombination = [state.primaryKeywords[i]];
+                     let remainingKeywords = allKeywords.filter((keyword, index) => index !== i && keyword !== state.primaryKeywords[i]);
+
+                     let subCombinations = [];
+                     combine(remainingKeywords, k - 1, 0, [], subCombinations);
+
+                     for (let subCombination of subCombinations) {
+                         let comb = [...initialCombination, ...subCombination];
+
+                         if (comb.length === k && comb.filter(keyword => state.primaryKeywords.includes(keyword)).length > 0
+                             && new Set(comb).size === k
+                            ) {
+                             combinations.push(comb);
+                         }
+                     }
+                 }
+             }
+
+             return combinations;
+         }
+
+        // Process all combinations
+        async function processCombinations(combinations) {
+            for (const combination of combinations) {
+                if (!state.searchInProgress) {
+                    // Stop processing if search was cancelled
+                    break;
                 }
+               // Check valid before process
+               if (isValidCombination(combination)) {
+                  await processCombination(combination);
+               } else {
+                    console.log('Skipping combination: ', combination.join(', '));
+               }
 
-                const combination = combinations[currentIndex];
-                currentIndex++;
+            }
+            finishSearch();
+        }
 
-                // Update status
-                generationStatus.textContent = `Testing combination ${currentIndex}/${totalCombinations}`;
+        // Process a single combination
+        async function processCombination(combination) {
+             state.currentCombination = combination;
 
-                // Skip if this combination is a subset of an already validated combination
-                if (isSubsetOfExistingCombination(combination)) {
-                    setTimeout(testNextCombination, 10); // Process next combination quickly
-                    return;
+             // Display current combination
+             elements.currentSearch.textContent = combination.join(', ');
+             elements.searchStatus.textContent = '正在检索 arXiv...';
+
+             // Build arXiv search query
+             const searchQuery = buildArxivQuery(combination);
+
+             try {
+                 // Search arXiv
+                 const results = await searchArxiv(searchQuery);
+                 const count = results.count;
+                 elements.resultsCount.textContent = count;
+
+                 // Check if results are within limit
+                 if (count > 0 && count <= state.maxResults) {
+                     // Valid combination found
+                     handleValidCombination(combination, results);
+                 } else {
+                     // No results found or too many results
+                     elements.searchStatus.textContent = count > state.maxResults ? '结果过多 (>' + state.maxResults +
+                         ')。' : '未找到结果。';
+                 }
+             } catch (error) {
+                 console.error('arXiv search error:', error);
+                 elements.searchStatus.textContent = '检索出错: ' + error.message;
+             }
+        }
+
+        // Check if a combination is valid (not a subset and not already existing)
+        function isValidCombination(combination) {
+            if (isSubsetOfAnyExistingCombination(combination)) {
+                console.log('Skipping subset: ', combination.join(', '));
+                return false;
+            }
+
+            if (isExistingCombination(combination)) {
+                console.log('Skipping existing combination: ', combination.join(', '));
+                return false;
+            }
+
+            // Check if is a superset of any valid combination
+            if (isSupersetOfAnyExistingCombination(combination)){
+                console.log("Skipping superset: ", combination.join(', '));
+                return false;
+            }
+            return true;
+        }
+
+        // Check if a combination is a subset of ANY existing valid combination
+        function isSubsetOfAnyExistingCombination(combination) {
+            const combinationSet = new Set(combination);
+
+            for (const validComb of state.validCombinations) {
+                const validSet = new Set(validComb.keywords);
+                if (isSubset(combinationSet, validSet)) {
+                    return true; // It's a subset of AT LEAST ONE, so it fails
                 }
+            }
 
-                try {
-                    const results = await testCombinationWithSemanticScholar(combination);
+            return false; // It's NOT a subset of ANY valid combination
+        }
 
-                    // If valid (between 1 and 100 results), add to valid combinations
-                    if (results <= 100) {
-                        state.validCombinations.push(combination);
-                        renderValidCombination(combination,results);
-                    }
+        // Check if a combination is a superset of ANY existing valid combination
+        function isSupersetOfAnyExistingCombination(combination) {
+            const combinationSet = new Set(combination);
 
-                    // Delay before the next request
-                    await delay(2000); // Delay 2 seconds
-
-                    testNextCombination(); // Call the function to process the next combination
-
-                } catch (e) {
-                    console.error("Error testing combination:", e);
-                    setTimeout(testNextCombination, 1000); // Longer delay if there was an error
-                    showError(e.message);
-                     await delay(2000); // Delay 2 seconds
-
-                     testNextCombination();
+            for (const validComb of state.validCombinations) {
+                const validSet = new Set(validComb.keywords);
+                if (isSuperset(combinationSet, validSet)) {
+                    return true; // It's a superset of AT LEAST ONE, so it fails
                 }
+            }
+
+            return false; // It's NOT a superset of ANY valid combination
+        }
+
+         // Check if set A is a superset of set B
+        function isSuperset(setA, setB) {
+            if (setA.size < setB.size) return false;
+
+            for (const elem of setB) {
+                if (!setA.has(elem)) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        // Check if a combination is already an existing valid combination
+        function isExistingCombination(combination) {
+            for (const validComb of state.validCombinations) {
+                if (arraysAreEqual(combination, validComb.keywords)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        // Check if two arrays are equal
+        function arraysAreEqual(arr1, arr2) {
+            if (arr1.length !== arr2.length) return false;
+            for (let i = 0; i < arr1.length; i++) {
+                if (arr1[i] !== arr2[i]) return false;
+            }
+            return true;
+        }
+
+        // Check if set A is a subset of set B
+        function isSubset(setA, setB) {
+            if (setA.size > setB.size) return false;
+
+            for (const elem of setA) {
+                if (!setB.has(elem)) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        // Handle valid combination
+        function handleValidCombination(combination, results) {
+            const validCombination = {
+                keywords: combination,
+                count: results.count,
+                timestamp: new Date().toISOString()
             };
 
-            // Start the process
-            testNextCombination();
-        });
+            state.validCombinations.push(validCombination);
+            renderValidCombinations();
+            renderArxivResults(results);
 
-        // Function to display the exported combinations in the textarea
-        function displayExportedCombinations() {
-            const exportedString = state.validCombinations
-                .map(combo => combo.join(','))
-                .join(';');
-            exportedCombinations.value = exportedString; // Set the textarea value
+            elements.searchStatus.textContent = '找到有效组合！';
         }
 
-        // Function to generate combinations
-        function getCombinations(array, k) {
-            if (k > array.length || k <= 0) {
-                return [];
+        // Render valid combinations
+        function renderValidCombinations() {
+            const container = elements.validCombinations;
+
+            if (state.validCombinations.length === 0) {
+                container.innerHTML = '<span class="text-gray-500 dark:text-gray-400">尚无有效组合</span>';
+                return;
             }
 
-            if (k === array.length) {
-                return [array];
-            }
+            container.innerHTML = '';
 
-            if (k === 1) {
-                return array.map(item => [item]);
-            }
+            state.validCombinations.forEach((combination, index) => {
+                const element = document.createElement('div');
+                element.className = 'mb-3 p-3 bg-white dark:bg-gray-800 rounded-md shadow';
+                element.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <div class="font-medium">${combination.keywords.join(', ')}</div>
+                            <div class="text-sm text-gray-500 dark:text-gray-400">结果数: ${combination.count}</div>
+                        </div>
+                        <button class="text-red-500 hover:text-red-700 transition" data-index="${index}">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                `;
 
-            const combinations = [];
-            for (let i = 0; i <= array.length - k; i++) {
-                const subArray = array.slice(i + 1);
-                const subCombinations = getCombinations(subArray, k - 1);
-                for (const subCombination of subCombinations) {
-                    combinations.push([array[i], ...subCombination]);
-                }
-            }
-            return combinations;
-        }
+                const deleteButton = element.querySelector('button');
+                deleteButton.addEventListener('click', () => {
+                    state.validCombinations.splice(index, 1);
+                    renderValidCombinations();
+                });
 
-        // Check if a combination is a subset of an existing valid combination
-        function isSubsetOfExistingCombination(combination) {
-            return state.validCombinations.some(validCombo => {
-                return isSubset(combination, validCombo);
+                container.appendChild(element);
             });
         }
 
-        // Check if array1 is a subset of array2
-        function isSubset(array1, array2) {
-            return array1.every(element => array2.includes(element));
+        // Render arXiv results
+        function renderArxivResults(results) {
+            const container = elements.arxivResults;
+
+            if (!results || results.count === 0) {
+                container.innerHTML = '<span class="text-gray-500 dark:text-gray-400">尚无检索结果</span>';
+                return;
+            }
+
+            container.innerHTML = '';
+
+            results.entries.slice(0, 5).forEach(entry => {
+                const element = document.createElement('div');
+                element.className = 'mb-4 p-3 bg-white dark:bg-gray-800 rounded-md shadow';
+
+                // Format authors
+                const authors = entry.authors.map(author => author.name).join(', ');
+
+                element.innerHTML = `
+                    <h3 class="font-medium text-lg mb-1">${entry.title}</h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">${authors}</p>
+                    <p class="text-sm mb-2">${entry.summary.substring(0, 200)}...</p>
+                    <a href="${entry.link}" target="_blank" class="text-primary hover:underline block text-sm">查看论文 →</a>
+                `;
+
+                container.appendChild(element);
+            });
+
+            // Add "show more" text if more than 5 results
+            if (results.count > 5) {
+                const moreText = document.createElement('p');
+                moreText.className = 'text-center text-gray-500 dark:text-gray-400 mt-2';
+                moreText.textContent = `显示前 5 条结果，共 ${results.count} 条`;
+                container.appendChild(moreText);
+            }
         }
 
-        // Delay function for rate limiting
-        function delay(ms) {
-            return new Promise(resolve => setTimeout(resolve, ms));
+        // Build arXiv API query
+        function buildArxivQuery(keywords) {
+            // Format: all:keyword1+AND+all:keyword2...
+            return keywords.map(keyword => `all:${encodeURIComponent(keyword.trim())}`).join('+AND+');
         }
 
-
-        // Test a keyword combination with Semantic Scholar API
-        async function testCombinationWithSemanticScholar(keywords) {
-             return new Promise((resolve, reject) => {
-                const query = keywords.join(" "); // Join keywords with space for Semantic Scholar
-
-                // Construct the Semantic Scholar API URL (replace with the actual API endpoint)
-                const apiUrl = `https://api.semanticscholar.org/graph/v1/paper/search?query=${encodeURIComponent(query)}&limit=10`;
+        // Search arXiv API
+        function searchArxiv(query) {
+            return new Promise((resolve, reject) => {
+                const url = `http://export.arxiv.org/api/query?search_query=${query}&start=0&max_results=5`;
 
                 const xhr = new XMLHttpRequest();
-                xhr.open('GET', apiUrl);
-                xhr.setRequestHeader('X-API-KEY', 'YOUR_API_KEY');  // Optional: Replace YOUR_API_KEY if required
+                xhr.open('GET', url, true);
 
-                xhr.timeout = 10000; // 10 seconds
-
-                xhr.onload = function() {
-                    if (xhr.status >= 200 && xhr.status < 300) {
+                xhr.onload = function () {
+                    if (xhr.status === 200) {
                         try {
-                            const response = JSON.parse(xhr.responseText);
-                             const totalResults = response.total || response.data.length;
+                            const parser = new DOMParser();
+                            const xmlDoc = parser.parseFromString(xhr.responseText, 'text/xml');
 
-                             resolve(totalResults);
+                            // Parse total results count
+                            const totalResults = xmlDoc.querySelector('opensearch\\:totalResults, totalResults');
+                            const count = totalResults ? parseInt(totalResults.textContent, 10) : 0;
 
-                        } catch (e) {
-                            reject(new Error('Failed to parse Semantic Scholar API response: ' + e.message));
+                            // Parse entries
+                            const entries = [];
+                            const entryElements = xmlDoc.querySelectorAll('entry');
+
+                            entryElements.forEach(entry => {
+                                // Parse authors
+                                const authorElements = entry.querySelectorAll('author');
+                                const authors = [];
+
+                                authorElements.forEach(author => {
+                                    const nameElement = author.querySelector('name');
+                                    if (nameElement) {
+                                        authors.push({ name: nameElement.textContent });
+                                    }
+                                });
+
+                                // Get title, summary, link
+                                const title = entry.querySelector('title').textContent;
+                                const summary = entry.querySelector('summary').textContent;
+                                const link = entry.querySelector('id').textContent;
+
+                                entries.push({
+                                    title,
+                                    summary,
+                                    authors,
+                                    link
+                                });
+                            });
+
+                            resolve({
+                                count,
+                                entries
+                            });
+                        } catch (error) {
+                            reject(new Error('解析 arXiv 响应时出错: ' + error.message));
                         }
                     } else {
-                        reject(new Error(`Semantic Scholar API returned status code: ${xhr.status}`));
+                        reject(new Error('arXiv API 请求失败，状态码: ' + xhr.status));
                     }
                 };
 
-                xhr.onerror = function() {
-                    reject(new Error('Network error occurred while calling Semantic Scholar API. Check CORS settings and network connection.'));
+                xhr.onerror = function () {
+                    reject(new Error('无法连接到 arXiv API'));
                 };
 
-                 xhr.ontimeout = function() {
-                   reject(new Error('Semantic Scholar API request timed out. The service might be unresponsive.'));
-                };
-
-
-                try {
-                    xhr.send();
-                } catch (e) {
-                    reject(new Error('Error sending request to Semantic Scholar API: ' + e.message));
-                }
+                xhr.send();
             });
         }
 
-
-        // Render a valid combination in the results section
-        function renderValidCombination(combo, resultCount) {
-            // Clear initial message if present
-            if (combinationResults.querySelector('p.text-center')) {
-                combinationResults.innerHTML = '';
+        // Export valid combinations
+        function exportCombinations() {
+            if (state.validCombinations.length === 0) {
+                alert('没有有效组合可导出');
+                return;
             }
 
-            const comboElement = document.createElement('div');
-            comboElement.className = 'p-6 border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-md transition duration-200 mb-6';
+            // Format: keyword1,keyword2;keyword3,keyword4
+            const exportText = state.validCombinations
+                .map(combination => combination.keywords.join(','))
+                .join(';');
 
-            // Combination header
-            const header = document.createElement('h3');
-            header.className = 'font-semibold text-lg mb-2';
-            header.textContent = combo.join(', ');
+            // Create textarea for copy
+            const textArea = document.createElement('textarea');
+            textArea.value = exportText;
+            textArea.style.position = 'fixed';
+            textArea.style.opacity = 0;
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
 
-            const resultInfo = document.createElement('p');
-            resultInfo.className = 'text-gray-600 dark:text-gray-400';
-            resultInfo.textContent = `Semantic Scholar Results: ${resultCount}`;
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    alert('有效组合已复制到剪贴板！');
+                } else {
+                    // Fallback for browsers that don't support execCommand
+                    alert('无法自动复制，请手动复制以下内容：\n\n' + exportText);
+                }
+            } catch (err) {
+                alert('无法自动复制，请手动复制以下内容：\n\n' + exportText);
+            }
 
-            comboElement.appendChild(header);
-            comboElement.appendChild(resultInfo);
-            combinationResults.appendChild(comboElement);
+            document.body.removeChild(textArea);
         }
 
-         function showError(message) {
-            errorMessage.textContent = message;
-            error.classList.remove('hidden');
+        // Finish search process
+        function finishSearch() {
+            state.searchInProgress = false;
+            elements.searchStatus.textContent = '检索完成';
         }
 
-        // Initial render of keywords if there are any in state.
-        renderKeywords();
+        // Clear all data and UI
+        function clearAll() {
+            // Confirm before clearing
+            if (confirm('确定要清除所有数据吗？')) {
+                state.primaryKeywords = [];
+                state.secondaryKeywords = [];
+                state.validCombinations = [];
+                state.currentCombination = [];
+                state.searchInProgress = false;
+
+                elements.primaryKeywordInput.value = '';
+                elements.secondaryKeywordInput.value = '';
+                elements.currentSearch.textContent = '未开始检索';
+                elements.searchStatus.textContent = '等待开始检索...';
+                elements.resultsCount.textContent = '0';
+
+                renderKeywords('primary');
+                renderKeywords('secondary');
+                renderValidCombinations();
+
+                elements.arxivResults.innerHTML = '<span class="text-gray-500 dark:text-gray-400">尚无检索结果</span>';
+            }
+        }
+
+        // Initialize the app
+        function init() {
+            renderKeywords('primary');
+            renderKeywords('secondary');
+            renderValidCombinations();
+            initEventListeners();
+        }
+
+        // Start the app
+        init();
     </script>
 </body>
+
 </html>
