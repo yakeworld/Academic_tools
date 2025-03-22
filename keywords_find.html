@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,58 +10,91 @@
         body {
             font-family: sans-serif;
         }
+
         #app {
             max-width: 900px;
             margin: 0 auto;
             padding: 20px;
         }
+
         .input-group {
             margin-bottom: 15px;
         }
     </style>
 </head>
+
 <body class="bg-gray-100">
     <div id="app" class="container mx-auto p-4 bg-white shadow-md rounded-md">
         <h1 class="text-2xl font-semibold mb-4">Keyword Combiner & arXiv Search</h1>
 
         <!-- Keyword Input -->
         <div class="input-group">
-            <label for="primaryKeywords" class="block text-gray-700 text-sm font-bold mb-2">Primary Keywords (comma-separated):</label>
-            <input type="text" id="primaryKeywords" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="e.g., machine learning, deep learning">
-            <button id="addPrimaryKeyword" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mt-2">Add Primary</button>
-            <button id="modifyPrimaryKeyword" class="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded mt-2 ml-2">Modify Primary</button>
+            <label for="primaryKeywords" class="block text-gray-700 text-sm font-bold mb-2">Primary Keywords
+                (comma-separated):</label>
+            <input type="text" id="primaryKeywords"
+                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                placeholder="e.g., machine learning, deep learning">
+            <button id="addPrimaryKeyword"
+                class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mt-2">Add
+                Primary</button>
+            <button id="modifyPrimaryKeyword"
+                class="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded mt-2 ml-2">Modify
+                Primary</button>
         </div>
 
         <div class="input-group">
-            <label for="secondaryKeywords" class="block text-gray-700 text-sm font-bold mb-2">Secondary Keywords (comma-separated):</label>
-            <input type="text" id="secondaryKeywords" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="e.g., NLP, computer vision">
-            <button id="addSecondaryKeyword" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mt-2">Add Secondary</button>
-            <button id="modifySecondaryKeyword" class="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded mt-2 ml-2">Modify Secondary</button>
+            <label for="secondaryKeywords" class="block text-gray-700 text-sm font-bold mb-2">Secondary Keywords
+                (comma-separated):</label>
+            <input type="text" id="secondaryKeywords"
+                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                placeholder="e.g., NLP, computer vision">
+            <button id="addSecondaryKeyword"
+                class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mt-2">Add
+                Secondary</button>
+            <button id="modifySecondaryKeyword"
+                class="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded mt-2 ml-2">Modify
+                Secondary</button>
         </div>
 
         <!-- Bulk Keyword Input -->
         <div class="input-group">
-            <label for="bulkPrimaryKeywords" class="block text-gray-700 text-sm font-bold mb-2">Bulk Primary Keywords (comma-separated):</label>
-            <textarea id="bulkPrimaryKeywords" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="keyword1, keyword2, keyword3"></textarea>
-            <button id="addBulkPrimaryKeywords" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mt-2">Add Bulk Primary</button>
+            <label for="bulkPrimaryKeywords" class="block text-gray-700 text-sm font-bold mb-2">Bulk Primary Keywords
+                (comma-separated):</label>
+            <textarea id="bulkPrimaryKeywords"
+                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                placeholder="keyword1, keyword2, keyword3"></textarea>
+            <button id="addBulkPrimaryKeywords"
+                class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mt-2">Add Bulk
+                Primary</button>
         </div>
 
         <div class="input-group">
-            <label for="bulkSecondaryKeywords" class="block text-gray-700 text-sm font-bold mb-2">Bulk Secondary Keywords (comma-separated):</label>
-            <textarea id="bulkSecondaryKeywords" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="keyword1, keyword2, keyword3"></textarea>
-            <button id="addBulkSecondaryKeywords" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mt-2">Add Bulk Secondary</button>
+            <label for="bulkSecondaryKeywords" class="block text-gray-700 text-sm font-bold mb-2">Bulk Secondary
+                Keywords (comma-separated):</label>
+            <textarea id="bulkSecondaryKeywords"
+                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                placeholder="keyword1, keyword2, keyword3"></textarea>
+            <button id="addBulkSecondaryKeywords"
+                class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mt-2">Add Bulk
+                Secondary</button>
         </div>
 
 
         <!-- Configuration -->
         <div class="input-group">
-            <label for="maxResults" class="block text-gray-700 text-sm font-bold mb-2">Max Results per Combination:</label>
-            <input type="number" id="maxResults" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" value="100">
+            <label for="maxResults" class="block text-gray-700 text-sm font-bold mb-2">Max Results per
+                Combination:</label>
+            <input type="number" id="maxResults"
+                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                value="100">
         </div>
 
         <div class="input-group">
-            <label for="maxCombinationLength" class="block text-gray-700 text-sm font-bold mb-2">Max Keywords per Combination:</label>
-            <input type="number" id="maxCombinationLength" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" value="5">
+            <label for="maxCombinationLength" class="block text-gray-700 text-sm font-bold mb-2">Max Keywords per
+                Combination:</label>
+            <input type="number" id="maxCombinationLength"
+                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                value="5">
         </div>
 
         <!-- Keyword Lists -->
@@ -77,7 +111,9 @@
 
         <!-- Combination Generation -->
         <div class="input-group">
-            <button id="generateCombinations" class="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded">Generate Combinations</button>
+            <button id="generateCombinations"
+                class="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded">Generate
+                Combinations</button>
         </div>
 
         <!-- Generated Combinations -->
@@ -89,8 +125,11 @@
 
         <!-- Search -->
         <div class="input-group">
-            <button id="startSearch" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">Start arXiv Search</button>
-            <button id="clearAll" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">Clear All</button>
+            <button id="startSearch"
+                class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">Start arXiv
+                Search</button>
+            <button id="clearAll" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">Clear
+                All</button>
         </div>
 
         <!-- Results -->
@@ -103,7 +142,9 @@
 
         <!-- Export -->
         <div class="input-group">
-            <button id="exportCombinations" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">Export Combinations</button>
+            <button id="exportCombinations"
+                class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">Export
+                Combinations</button>
         </div>
     </div>
 
@@ -140,13 +181,13 @@
                 generatedCombinations.push([primaryArray[i]]);  // Start with single primary keywords
 
                 // Combinations of primary keywords (limit 2 primary keywords in a combination).
-                for(let j = i + 1; j < primaryArray.length; j++){
+                for (let j = i + 1; j < primaryArray.length; j++) {
                     generatedCombinations.push([primaryArray[i], primaryArray[j]]);
                 }
 
                 // Adding secondary keywords to the primary keyword
                 for (let j = 0; j < secondaryArray.length; j++) {
-                    if(generatedCombinations.length < 1000){ // Prevents exponential increase in combinations
+                    if (generatedCombinations.length < 1000) { // Prevents exponential increase in combinations
                         generatedCombinations.push([primaryArray[i], secondaryArray[j]]);
                     }
                 }
@@ -154,12 +195,12 @@
 
             // Expand initial combinations by adding up to two secondary keywords.
             let expandedCombinations = [];
-            for(let i = 0; i < generatedCombinations.length; i++){
+            for (let i = 0; i < generatedCombinations.length; i++) {
                 let baseCombination = generatedCombinations[i];
                 expandedCombinations.push(baseCombination); // Keep the original combination
 
-                for(let j = 0; j < secondaryArray.length; j++){
-                    if(baseCombination.length < maxCombinationLength){
+                for (let j = 0; j < secondaryArray.length; j++) {
+                    if (baseCombination.length < maxCombinationLength) {
                         let newCombination = [...baseCombination, secondaryArray[j]];
                         expandedCombinations.push(newCombination);
                     }
@@ -226,7 +267,7 @@
 
         function searchArxiv(combination) {
             return new Promise((resolve, reject) => {
-                const query = combination.map(keyword => `"${keyword}"`).join(" AND ");
+                const query = combination.map(keyword => `all:"${keyword}"`).join(" AND "); // Use all:"keyword" to search in all fields
                 const url = `http://export.arxiv.org/api/query?search_query=${query}&start=0&max_results=${maxResults}`;
                 const xhr = new XMLHttpRequest();
 
@@ -240,7 +281,7 @@
                         const entries = xmlDoc.querySelectorAll("entry");
 
                         if (entries.length > 0) {
-                            resolve(combination); // Resolve with the combination if results found
+                            resolve({combination: combination, count: entries.length}); // Resolve with the combination if results found
                         } else {
                             resolve(null); // Resolve with null if no results found
                         }
@@ -255,7 +296,7 @@
             });
         }
 
-       async function startArxivSearch() {
+        async function startArxivSearch() {
             const maxResultsValue = parseInt(document.getElementById("maxResults").value, 10);
             if (!isNaN(maxResultsValue) && maxResultsValue > 0) {
                 maxResults = maxResultsValue;
@@ -312,9 +353,14 @@
                 try {
                     const result = await searchArxiv(combination);
                     if (result) {
-                        const validCombinationString = result.join(", ");
-                        validCombinations.add(validCombinationString);
-                        console.log(`Valid combination found: ${validCombinationString}`);
+                        const validCombinationString = result.combination.join(", ");
+                        if (result.count > maxResults) {
+                            alert(`Combination "${validCombinationString}" returned more than ${maxResults} results.  Consider adding more keywords.`);
+                        } else {
+                            validCombinations.add(validCombinationString);
+                            console.log(`Valid combination found: ${validCombinationString}`);
+                        }
+
                     }
                 } catch (error) {
                     console.error(`Error searching for combination ${combination.join(", ")}: ${error}`);
@@ -327,6 +373,7 @@
 
             progressDiv.textContent = "Search complete!";
             updateValidCombinationsList();
+            displayValidCombinations();
         }
 
         function exportCombinations() {
@@ -352,6 +399,12 @@
             updateGeneratedCombinationsList();
             updateValidCombinationsList();
             document.getElementById("progress").textContent = "";
+            document.getElementById("validCombinationsText").textContent = "";
+        }
+
+        function displayValidCombinations() {
+            const validCombinationsArray = Array.from(validCombinations);
+            document.getElementById("validCombinationsText").textContent = validCombinationsArray.join("; ");
         }
 
 
@@ -385,7 +438,7 @@
             }
         });
 
-       document.getElementById("modifySecondaryKeyword").addEventListener("click", () => {
+        document.getElementById("modifySecondaryKeyword").addEventListener("click", () => {
             const newKeyword = document.getElementById("secondaryKeywords").value.trim();
             if (newKeyword) {
                 secondaryKeywords.clear();
@@ -426,14 +479,14 @@
             let isSubsetResult = isSubset(combo1, combo2);
             console.assert(isSubsetResult === true, "Test Case 1 Failed: Subset Check");
 
-             // Test Case 2:  Subset Check (Negative)
+            // Test Case 2:  Subset Check (Negative)
             combo1 = ["keywordA", "keywordD"];
             combo2 = "keywordA, keywordB, keywordC";
             isSubsetResult = isSubset(combo1, combo2);
             console.assert(isSubsetResult === false, "Test Case 2 Failed: Subset Check (Negative)");
 
             // Test Case 3: Superset Check
-             combo1 = ["keywordA", "keywordB", "keywordC"];
+            combo1 = ["keywordA", "keywordB", "keywordC"];
             combo2 = "keywordA, keywordB";
             let isSuperSetResult = isSuperset(combo1, combo2);
             console.assert(isSuperSetResult === true, "Test Case 3 Failed: Superset Check");
@@ -454,5 +507,13 @@
 
 
     </script>
+
+    <!-- Valid Combinations Text Output -->
+    <div>
+        <h2 class="text-lg font-semibold mb-2">Valid Keyword Combinations (Text Output):</h2>
+        <p id="validCombinationsText"></p>
+    </div>
+
 </body>
+
 </html>
