@@ -1,406 +1,458 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Keyword Combination & arXiv Search</title>
+    <title>Keyword Combiner & arXiv Search</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <style>
-        #progress-bar {
-            width: 0%;
-            height: 10px;
-            background-color: green;
+        body {
+            font-family: sans-serif;
+        }
+        #app {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .input-group {
+            margin-bottom: 15px;
         }
     </style>
 </head>
+<body class="bg-gray-100">
+    <div id="app" class="container mx-auto p-4 bg-white shadow-md rounded-md">
+        <h1 class="text-2xl font-semibold mb-4">Keyword Combiner & arXiv Search</h1>
 
-<body class="bg-gray-100 p-4">
-
-    <div class="max-w-4xl mx-auto bg-white shadow-md rounded-lg p-6">
-        <h1 class="text-2xl font-semibold mb-4">Keyword Combination & arXiv Search</h1>
-
-        <!-- Keyword Input Section -->
-        <div class="mb-4">
-            <h2 class="text-lg font-medium mb-2">Keywords</h2>
-            <div class="mb-2">
-                <label for="primaryKeywords" class="block text-gray-700 text-sm font-bold mb-2">Primary Keywords
-                    (comma-separated):</label>
-                <input type="text" id="primaryKeywords"
-                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                    placeholder="e.g., Machine Learning, Deep Learning">
-            </div>
-            <div class="mb-2">
-                <label for="secondaryKeywords" class="block text-gray-700 text-sm font-bold mb-2">Secondary Keywords
-                    (comma-separated):</label>
-                <input type="text" id="secondaryKeywords"
-                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                    placeholder="e.g., NLP, Computer Vision">
-            </div>
-            <button id="addKeywords"
-                class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
-                Add/Update Keywords
-            </button>
+        <!-- Keyword Input -->
+        <div class="input-group">
+            <label for="primaryKeywords" class="block text-gray-700 text-sm font-bold mb-2">Primary Keywords (comma-separated):</label>
+            <input type="text" id="primaryKeywords" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="e.g., machine learning, deep learning">
+            <button id="addPrimaryKeyword" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mt-2">Add Primary</button>
+            <button id="modifyPrimaryKeyword" class="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded mt-2 ml-2">Modify Primary</button>
         </div>
 
-        <!-- Configuration Section -->
-        <div class="mb-4">
-            <h2 class="text-lg font-medium mb-2">Configuration</h2>
-            <div class="mb-2">
-                <label for="maxResults" class="block text-gray-700 text-sm font-bold mb-2">Max Results per
-                    Combination:</label>
-                <input type="number" id="maxResults" value="100"
-                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-            </div>
+        <div class="input-group">
+            <label for="secondaryKeywords" class="block text-gray-700 text-sm font-bold mb-2">Secondary Keywords (comma-separated):</label>
+            <input type="text" id="secondaryKeywords" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="e.g., NLP, computer vision">
+            <button id="addSecondaryKeyword" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mt-2">Add Secondary</button>
+            <button id="modifySecondaryKeyword" class="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded mt-2 ml-2">Modify Secondary</button>
+        </div>
 
-            <div class="mb-2">
-                <label for="maxKeywords" class="block text-gray-700 text-sm font-bold mb-2">Max Keywords Combination Length:</label>
-                <input type="number" id="maxKeywords" value="5"
-                       class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-            </div>
+        <!-- Bulk Keyword Input -->
+        <div class="input-group">
+            <label for="bulkPrimaryKeywords" class="block text-gray-700 text-sm font-bold mb-2">Bulk Primary Keywords (comma-separated):</label>
+            <textarea id="bulkPrimaryKeywords" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="keyword1, keyword2, keyword3"></textarea>
+            <button id="addBulkPrimaryKeywords" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mt-2">Add Bulk Primary</button>
+        </div>
+
+        <div class="input-group">
+            <label for="bulkSecondaryKeywords" class="block text-gray-700 text-sm font-bold mb-2">Bulk Secondary Keywords (comma-separated):</label>
+            <textarea id="bulkSecondaryKeywords" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="keyword1, keyword2, keyword3"></textarea>
+            <button id="addBulkSecondaryKeywords" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mt-2">Add Bulk Secondary</button>
         </div>
 
 
-        <!-- Combination Generation and Search Section -->
-        <div class="mb-4">
-            <h2 class="text-lg font-medium mb-2">Generate Combinations & Search</h2>
-            <button id="generateCombinations"
-                class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
-                Generate Combinations
-            </button>
-            <button id="startSearch"
-                    class="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
-                Start Search
-            </button>
+        <!-- Configuration -->
+        <div class="input-group">
+            <label for="maxResults" class="block text-gray-700 text-sm font-bold mb-2">Max Results per Combination:</label>
+            <input type="number" id="maxResults" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" value="100">
         </div>
 
-        <!-- Display Areas -->
+        <div class="input-group">
+            <label for="maxCombinationLength" class="block text-gray-700 text-sm font-bold mb-2">Max Keywords per Combination:</label>
+            <input type="number" id="maxCombinationLength" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" value="5">
+        </div>
+
+        <!-- Keyword Lists -->
         <div class="mb-4">
-            <h2 class="text-lg font-medium mb-2">Generated Combinations</h2>
+            <h2 class="text-lg font-semibold mb-2">Primary Keywords:</h2>
+            <ul id="primaryKeywordList" class="list-disc pl-5"></ul>
+        </div>
+
+        <div class="mb-4">
+            <h2 class="text-lg font-semibold mb-2">Secondary Keywords:</h2>
+            <ul id="secondaryKeywordList" class="list-disc pl-5"></ul>
+        </div>
+
+
+        <!-- Combination Generation -->
+        <div class="input-group">
+            <button id="generateCombinations" class="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded">Generate Combinations</button>
+        </div>
+
+        <!-- Generated Combinations -->
+        <div class="mb-4">
+            <h2 class="text-lg font-semibold mb-2">Generated Keyword Combinations:</h2>
             <ul id="generatedCombinationsList" class="list-disc pl-5"></ul>
         </div>
 
-        <div class="mb-4">
-            <h2 class="text-lg font-medium mb-2">Valid Keyword Combinations</h2>
+
+        <!-- Search -->
+        <div class="input-group">
+            <button id="startSearch" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">Start arXiv Search</button>
+            <button id="clearAll" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">Clear All</button>
+        </div>
+
+        <!-- Results -->
+        <div>
+            <h2 class="text-lg font-semibold mb-2">Valid Keyword Combinations:</h2>
             <ul id="validCombinationsList" class="list-disc pl-5"></ul>
         </div>
 
-        <div class="mb-4">
-            <h2 class="text-lg font-medium mb-2">Search Progress</h2>
-            <div id="progress-bar-container" class="bg-gray-300 rounded-full h-2">
-                <div id="progress-bar" class="rounded-full h-2"></div>
-            </div>
-            <p id="progress-text">0% Complete</p>
+        <div id="progress" class="mt-4"></div>
+
+        <!-- Export -->
+        <div class="input-group">
+            <button id="exportCombinations" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">Export Combinations</button>
         </div>
-
-        <!-- Export & Clear -->
-        <div>
-            <button id="exportCombinations"
-                class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
-                Export Combinations
-            </button>
-            <button id="clearAll"
-                class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
-                Clear All
-            </button>
-        </div>
-
-        <!-- Error/Message Display -->
-        <div id="messageArea" class="mt-4 text-red-500"></div>
-
     </div>
 
     <script>
-        const primaryKeywordsInput = document.getElementById('primaryKeywords');
-        const secondaryKeywordsInput = document.getElementById('secondaryKeywords');
-        const addKeywordsButton = document.getElementById('addKeywords');
-        const generateCombinationsButton = document.getElementById('generateCombinations');
-        const startSearchButton = document.getElementById('startSearch');
-        const validCombinationsList = document.getElementById('validCombinationsList');
-        const exportCombinationsButton = document.getElementById('exportCombinations');
-        const clearAllButton = document.getElementById('clearAll');
-        const messageArea = document.getElementById('messageArea');
-        const maxResultsInput = document.getElementById('maxResults');
-        const maxKeywordsInput = document.getElementById('maxKeywords');
-        const generatedCombinationsList = document.getElementById('generatedCombinationsList');
-        const progressBar = document.getElementById('progress-bar');
-        const progressText = document.getElementById('progress-text');
-
-
-        let primaryKeywords = [];
-        let secondaryKeywords = [];
-        let validCombinations = [];
+        const primaryKeywords = new Set();
+        const secondaryKeywords = new Set();
         let generatedCombinations = [];
+        const validCombinations = new Set();
+        let maxResults = 100; // Default max results
+        let maxCombinationLength = 5; // Default max combination length
 
-        // Helper Functions
-        function displayMessage(message) {
-            messageArea.textContent = message;
+        // Helper functions
+        function updateKeywordList(keywordSet, listElementId) {
+            const listElement = document.getElementById(listElementId);
+            listElement.innerHTML = "";
+            keywordSet.forEach(keyword => {
+                const li = document.createElement("li");
+                li.textContent = keyword;
+                listElement.appendChild(li);
+            });
         }
 
-        function clearMessage() {
-            messageArea.textContent = '';
+        function generateKeywordCombinations() {
+            generatedCombinations = []; // Clear previous combinations
+            const primaryArray = Array.from(primaryKeywords);
+            const secondaryArray = Array.from(secondaryKeywords);
+
+            if (primaryArray.length === 0) {
+                alert("Please add at least one primary keyword.");
+                return;
+            }
+
+            for (let i = 0; i < primaryArray.length; i++) {
+                generatedCombinations.push([primaryArray[i]]);  // Start with single primary keywords
+
+                // Combinations of primary keywords (limit 2 primary keywords in a combination).
+                for(let j = i + 1; j < primaryArray.length; j++){
+                    generatedCombinations.push([primaryArray[i], primaryArray[j]]);
+                }
+
+                // Adding secondary keywords to the primary keyword
+                for (let j = 0; j < secondaryArray.length; j++) {
+                    if(generatedCombinations.length < 1000){ // Prevents exponential increase in combinations
+                        generatedCombinations.push([primaryArray[i], secondaryArray[j]]);
+                    }
+                }
+            }
+
+            // Expand initial combinations by adding up to two secondary keywords.
+            let expandedCombinations = [];
+            for(let i = 0; i < generatedCombinations.length; i++){
+                let baseCombination = generatedCombinations[i];
+                expandedCombinations.push(baseCombination); // Keep the original combination
+
+                for(let j = 0; j < secondaryArray.length; j++){
+                    if(baseCombination.length < maxCombinationLength){
+                        let newCombination = [...baseCombination, secondaryArray[j]];
+                        expandedCombinations.push(newCombination);
+                    }
+                }
+            }
+
+            generatedCombinations = expandedCombinations;
+            updateGeneratedCombinationsList();
+
         }
 
-        function updateUI() {
-            renderValidCombinations();
-        }
 
-        function renderGeneratedCombinations() {
-            generatedCombinationsList.innerHTML = '';
+        function updateGeneratedCombinationsList() {
+            const listElement = document.getElementById("generatedCombinationsList");
+            listElement.innerHTML = "";
             generatedCombinations.forEach(combination => {
-                const li = document.createElement('li');
-                li.textContent = combination;
-                generatedCombinationsList.appendChild(li);
+                const li = document.createElement("li");
+                li.textContent = combination.join(", ");
+                listElement.appendChild(li);
             });
         }
 
-        function renderValidCombinations() {
-            validCombinationsList.innerHTML = '';
+        function updateValidCombinationsList() {
+            const listElement = document.getElementById("validCombinationsList");
+            listElement.innerHTML = "";
             validCombinations.forEach(combination => {
-                const li = document.createElement('li');
+                const li = document.createElement("li");
                 li.textContent = combination;
-                validCombinationsList.appendChild(li);
+                listElement.appendChild(li);
             });
         }
 
-        function generateKeywordCombinations(pKeywords, sKeywords, maxLength) {
-            const combinations = [];
-
-            function combine(currentCombination, remainingPrimary, remainingSecondary) {
-                if (currentCombination.length > maxLength) {
-                    return;
-                }
-
-                if (currentCombination.length > 0 && currentCombination.some(keyword => pKeywords.includes(keyword))) { // Ensure at least one primary keyword
-
-                    const combinationString = currentCombination.join(', ');
-                    if (!isCombinationSubset(combinationString, validCombinations)) {
-                        combinations.push(combinationString);
-                    }
-
-                }
-
-                if (remainingPrimary.length === 0 && remainingSecondary.length === 0) {
-                    return;
-                }
-
-                for (let i = 0; i < remainingPrimary.length; i++) {
-                    const newCombination = [...currentCombination, remainingPrimary[i]];
-                    const newRemainingPrimary = remainingPrimary.slice(i + 1);
-                    combine(newCombination, newRemainingPrimary, remainingSecondary);
-                }
-
-                for (let i = 0; i < remainingSecondary.length; i++) {
-                    const newCombination = [...currentCombination, remainingSecondary[i]];
-                    const newRemainingSecondary = remainingSecondary.slice(i + 1);
-                    combine(newCombination, remainingPrimary, newRemainingSecondary);
+        function isSubset(combination, existingCombination) {
+            const combinationSet = new Set(combination);
+            const existingCombinationSet = new Set(existingCombination.split(", "));
+            if (combinationSet.size > existingCombinationSet.size) {
+                return false; // Combination cannot be a subset if it's larger
+            }
+            for (let keyword of combinationSet) {
+                if (!existingCombinationSet.has(keyword)) {
+                    return false; // Keyword not found in existing combination
                 }
             }
-
-            combine([], pKeywords, sKeywords);
-            return combinations;
+            return true;
         }
 
+        function isSuperset(combination, existingCombination) {
+            const combinationSet = new Set(combination);
+            const existingCombinationSet = new Set(existingCombination.split(", "));
 
-        function isCombinationSubset(newCombination, existingCombinations) {
-            const newKeywords = newCombination.split(', ').sort();
+            if (combinationSet.size < existingCombinationSet.size) {
+                return false;
+            }
 
-            for (const existingCombination of existingCombinations) {
-                const existingKeywords = existingCombination.split(', ').sort();
-
-                if (newKeywords.length > existingKeywords.length) {
-                    // New combination can't be a subset if it has more keywords
-                    continue;
-                }
-
-                let isSubset = true;
-                for (const keyword of newKeywords) {
-                    if (!existingKeywords.includes(keyword)) {
-                        isSubset = false;
-                        break;
-                    }
-                }
-
-                if (isSubset) {
-                    return true;
+            for (let keyword of existingCombinationSet) {
+                if (!combinationSet.has(keyword)) {
+                    return false;
                 }
             }
-            return false;
-        }
-
-        function isCombinationSuperset(newCombination, existingCombinations) {
-            const newKeywords = newCombination.split(', ').sort();
-
-            for (const existingCombination of existingCombinations) {
-                const existingKeywords = existingCombination.split(', ').sort();
-
-                if (newKeywords.length < existingKeywords.length) {
-                    // New combination can't be a superset if it has fewer keywords
-                    continue;
-                }
-
-                let isSuperset = true;
-                for (const keyword of existingKeywords) {
-                    if (!newKeywords.includes(keyword)) {
-                        isSuperset = false;
-                        break;
-                    }
-                }
-
-                if (isSuperset) {
-                    return true;
-                }
-            }
-            return false;
+            return true;
         }
 
 
 
-        function searchArxiv(combination, maxResults) {
+        function searchArxiv(combination) {
             return new Promise((resolve, reject) => {
-                const query = combination.split(', ').map(keyword => `ti:${keyword.trim()}`).join(' OR ');
+                const query = combination.map(keyword => `"${keyword}"`).join(" AND ");
                 const url = `http://export.arxiv.org/api/query?search_query=${query}&start=0&max_results=${maxResults}`;
-
                 const xhr = new XMLHttpRequest();
-                xhr.open('GET', url);
+
+                xhr.open("GET", url);
 
                 xhr.onload = () => {
                     if (xhr.status >= 200 && xhr.status < 300) {
+                        const xmlString = xhr.responseText;
                         const parser = new DOMParser();
-                        const xmlDoc = parser.parseFromString(xhr.responseText, "text/xml");
-                        const entries = xmlDoc.querySelectorAll('entry');
-                        resolve(entries.length); // Return number of results
+                        const xmlDoc = parser.parseFromString(xmlString, "text/xml");
+                        const entries = xmlDoc.querySelectorAll("entry");
+
+                        if (entries.length > 0) {
+                            resolve(combination); // Resolve with the combination if results found
+                        } else {
+                            resolve(null); // Resolve with null if no results found
+                        }
                     } else {
                         reject(xhr.statusText);
                     }
                 };
 
-                xhr.onerror = () => reject(xhr.statusText);
+                xhr.onerror = () => reject("Network Error");
+
                 xhr.send();
             });
         }
 
+       async function startArxivSearch() {
+            const maxResultsValue = parseInt(document.getElementById("maxResults").value, 10);
+            if (!isNaN(maxResultsValue) && maxResultsValue > 0) {
+                maxResults = maxResultsValue;
+            } else {
+                alert("Invalid max results value.  Using default of 100.");
+                maxResults = 100;
+            }
 
-        async function performSearch(combinations, maxResults) {
-            const numCombinations = combinations.length;
-            let completedCombinations = 0;
+            const maxCombinationLengthValue = parseInt(document.getElementById("maxCombinationLength").value, 10);
+            if (!isNaN(maxCombinationLengthValue) && maxCombinationLengthValue > 0) {
+                maxCombinationLength = maxCombinationLengthValue;
+            } else {
+                alert("Invalid max combination length. Using default of 5.");
+                maxCombinationLength = 5;
+            }
 
-            for (const combination of combinations) {
-                if (isCombinationSuperset(combination, validCombinations)) {
-                    console.log(`Skipping superset combination: ${combination}`);
-                    completedCombinations++;
-                    updateProgressBar(completedCombinations, numCombinations);
+            const progressDiv = document.getElementById("progress");
+            progressDiv.textContent = "Searching...";
+            validCombinations.clear(); // Clear previous valid combinations
+
+            for (let i = 0; i < generatedCombinations.length; i++) {
+                const combination = generatedCombinations[i];
+                const combinationString = combination.join(", ");
+
+
+                // Skip supersets
+                let isSuperSet = false;
+                for (let validCombination of validCombinations) {
+                    if (isSuperset(combination, validCombination)) {
+                        isSuperSet = true;
+                        break;
+                    }
+                }
+                if (isSuperSet) {
+                    console.log(`Skipping superset: ${combinationString}`);
                     continue;
                 }
+
+
+                // Skip subsets
+                let isSubSet = false;
+                for (let validCombination of validCombinations) {
+                    if (isSubset(combination, validCombination)) {
+                        isSubSet = true;
+                        break;
+                    }
+                }
+                if (isSubSet) {
+                    console.log(`Skipping subset: ${combinationString}`);
+                    continue;
+                }
+
+
                 try {
-                    const resultCount = await searchArxiv(combination, maxResults);
-                    if (resultCount > 0 && resultCount <= maxResults) {
-                        console.log(`Combination "${combination}" found ${resultCount} results.`);
-                        validCombinations.push(combination);
-                        updateUI();
-
-
-                        //Split the primary results and search again
-                        let newPrimaryKeyword=combination.split(',')[0];
-                        console.log(`Split and adding new keyword: ${newPrimaryKeyword}`);
-
-                        if (!primaryKeywords.includes(newPrimaryKeyword))
-                            primaryKeywords.push(newPrimaryKeyword)
-                        
-                        generatedCombinations = generateKeywordCombinations(primaryKeywords, secondaryKeywords, parseInt(maxKeywordsInput.value));
-                        renderGeneratedCombinations()
-
-                    } else if (resultCount > maxResults) {
-                        displayMessage(`Combination "${combination}" returned more than ${maxResults} results. Consider adding more keywords.`);
-                    } else {
-                        console.log(`Combination "${combination}" returned no results.`);
+                    const result = await searchArxiv(combination);
+                    if (result) {
+                        const validCombinationString = result.join(", ");
+                        validCombinations.add(validCombinationString);
+                        console.log(`Valid combination found: ${validCombinationString}`);
                     }
                 } catch (error) {
-                    displayMessage(`Error searching for combination "${combination}": ${error}`);
+                    console.error(`Error searching for combination ${combination.join(", ")}: ${error}`);
                 }
-                completedCombinations++;
-                updateProgressBar(completedCombinations, numCombinations);
+
+                progressDiv.textContent = `Searching... ${i + 1}/${generatedCombinations.length}`;
+                updateValidCombinationsList(); // Update after each search
+
             }
+
+            progressDiv.textContent = "Search complete!";
+            updateValidCombinationsList();
         }
 
-        function updateProgressBar(completed, total) {
-            const percentage = (completed / total) * 100;
-            progressBar.style.width = `${percentage}%`;
-            progressText.textContent = `${percentage.toFixed(1)}% Complete`;
+        function exportCombinations() {
+            const combinationsText = Array.from(validCombinations).join("; ");
+            const blob = new Blob([combinationsText], { type: "text/plain" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "keyword_combinations.txt";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
         }
+
+        function clearAll() {
+            primaryKeywords.clear();
+            secondaryKeywords.clear();
+            generatedCombinations = [];
+            validCombinations.clear();
+            updateKeywordList(primaryKeywords, "primaryKeywordList");
+            updateKeywordList(secondaryKeywords, "secondaryKeywordList");
+            updateGeneratedCombinationsList();
+            updateValidCombinationsList();
+            document.getElementById("progress").textContent = "";
+        }
+
 
 
         // Event Listeners
-        addKeywordsButton.addEventListener('click', () => {
-            clearMessage();
-            const newPrimary = primaryKeywordsInput.value.split(',').map(keyword => keyword.trim()).filter(keyword => keyword !== '');
-            const newSecondary = secondaryKeywordsInput.value.split(',').map(keyword => keyword.trim()).filter(keyword => keyword !== '');
-
-            primaryKeywords = [...new Set([...primaryKeywords, ...newPrimary])];
-            secondaryKeywords = [...new Set([...secondaryKeywords, ...newSecondary])];
-
-            primaryKeywordsInput.value = primaryKeywords.join(', ');
-            secondaryKeywordsInput.value = secondaryKeywords.join(', ');
-
-            console.log('Primary Keywords:', primaryKeywords);
-            console.log('Secondary Keywords:', secondaryKeywords);
+        document.getElementById("addPrimaryKeyword").addEventListener("click", () => {
+            const keyword = document.getElementById("primaryKeywords").value.trim();
+            if (keyword) {
+                primaryKeywords.add(keyword);
+                updateKeywordList(primaryKeywords, "primaryKeywordList");
+                document.getElementById("primaryKeywords").value = "";
+            }
         });
 
-        generateCombinationsButton.addEventListener('click', () => {
-            clearMessage();
-            generatedCombinations = generateKeywordCombinations(primaryKeywords, secondaryKeywords, parseInt(maxKeywordsInput.value));
-            renderGeneratedCombinations();
+        document.getElementById("addSecondaryKeyword").addEventListener("click", () => {
+            const keyword = document.getElementById("secondaryKeywords").value.trim();
+            if (keyword) {
+                secondaryKeywords.add(keyword);
+                updateKeywordList(secondaryKeywords, "secondaryKeywordList");
+                document.getElementById("secondaryKeywords").value = "";
+            }
         });
 
-        startSearchButton.addEventListener('click', () => {
-            clearMessage();
-            validCombinations = [];
-            updateUI();
-            const maxResults = parseInt(maxResultsInput.value);
-            progressBar.style.width = '0%';
-            progressText.textContent = '0% Complete';
-            performSearch(generatedCombinations, maxResults);
+        document.getElementById("modifyPrimaryKeyword").addEventListener("click", () => {
+            const newKeyword = document.getElementById("primaryKeywords").value.trim();
+            if (newKeyword) {
+                primaryKeywords.clear();
+                primaryKeywords.add(newKeyword);
+                updateKeywordList(primaryKeywords, "primaryKeywordList");
+                document.getElementById("primaryKeywords").value = "";
+            }
         });
 
-        exportCombinationsButton.addEventListener('click', () => {
-            const dataStr = "data:text/plain;charset=utf-8," + encodeURIComponent(validCombinations.join('; '));
-            const downloadAnchorNode = document.createElement('a');
-            downloadAnchorNode.setAttribute("href", dataStr);
-            downloadAnchorNode.setAttribute("download", "keyword_combinations.txt");
-            document.body.appendChild(downloadAnchorNode); // required for firefox
-            downloadAnchorNode.click();
-            downloadAnchorNode.remove();
+       document.getElementById("modifySecondaryKeyword").addEventListener("click", () => {
+            const newKeyword = document.getElementById("secondaryKeywords").value.trim();
+            if (newKeyword) {
+                secondaryKeywords.clear();
+                secondaryKeywords.add(newKeyword);
+                updateKeywordList(secondaryKeywords, "secondaryKeywordList");
+                document.getElementById("secondaryKeywords").value = "";
+            }
         });
 
-        clearAllButton.addEventListener('click', () => {
-            primaryKeywords = [];
-            secondaryKeywords = [];
-            validCombinations = [];
-            generatedCombinations = [];
-            primaryKeywordsInput.value = '';
-            secondaryKeywordsInput.value = '';
-            generatedCombinationsList.innerHTML = '';
-            validCombinationsList.innerHTML = '';
-            progressBar.style.width = '0%';
-            progressText.textContent = '0% Complete';
-            clearMessage();
-            updateUI();
+        document.getElementById("addBulkPrimaryKeywords").addEventListener("click", () => {
+            const keywords = document.getElementById("bulkPrimaryKeywords").value.split(",").map(k => k.trim()).filter(k => k !== "");
+            keywords.forEach(keyword => primaryKeywords.add(keyword));
+            updateKeywordList(primaryKeywords, "primaryKeywordList");
+            document.getElementById("bulkPrimaryKeywords").value = "";
         });
 
+        document.getElementById("addBulkSecondaryKeywords").addEventListener("click", () => {
+            const keywords = document.getElementById("bulkSecondaryKeywords").value.split(",").map(k => k.trim()).filter(k => k !== "");
+            keywords.forEach(keyword => secondaryKeywords.add(keyword));
+            updateKeywordList(secondaryKeywords, "secondaryKeywordList");
+            document.getElementById("bulkSecondaryKeywords").value = "";
+        });
 
-        //Tests
-        function testKeywordCombinations() {
-            console.assert(generateKeywordCombinations(["A"], ["B"],2).length === 2, "Test Failed: Basic combination generation");
-            console.assert(isCombinationSubset("A, B", ["A, B, C"]) === true, "Test Failed: Subset check true");
-            console.assert(isCombinationSubset("A, B, C", ["A, B"]) === false, "Test Failed: Subset check false");
-            console.assert(isCombinationSuperset("A, B, C", ["A, B"]) === true, "Test Failed: Superset check true");
-            console.assert(isCombinationSuperset("A, B", ["A, B, C"]) === false, "Test Failed: Superset check false");
-            console.log("All tests passed!");
+        document.getElementById("generateCombinations").addEventListener("click", generateKeywordCombinations);
+        document.getElementById("startSearch").addEventListener("click", startArxivSearch);
+        document.getElementById("exportCombinations").addEventListener("click", exportCombinations);
+        document.getElementById("clearAll").addEventListener("click", clearAll);
+
+
+        // Testing Cases
+
+        function runTests() {
+            console.log("Running Tests...");
+
+            // Test Case 1:  Subset Check
+            let combo1 = ["keywordA", "keywordB"];
+            let combo2 = "keywordA, keywordB, keywordC";
+            let isSubsetResult = isSubset(combo1, combo2);
+            console.assert(isSubsetResult === true, "Test Case 1 Failed: Subset Check");
+
+             // Test Case 2:  Subset Check (Negative)
+            combo1 = ["keywordA", "keywordD"];
+            combo2 = "keywordA, keywordB, keywordC";
+            isSubsetResult = isSubset(combo1, combo2);
+            console.assert(isSubsetResult === false, "Test Case 2 Failed: Subset Check (Negative)");
+
+            // Test Case 3: Superset Check
+             combo1 = ["keywordA", "keywordB", "keywordC"];
+            combo2 = "keywordA, keywordB";
+            let isSuperSetResult = isSuperset(combo1, combo2);
+            console.assert(isSuperSetResult === true, "Test Case 3 Failed: Superset Check");
+
+            // Test Case 4: Superset Check (Negative)
+            combo1 = ["keywordA", "keywordB"];
+            combo2 = "keywordA, keywordB, keywordC";
+            isSuperSetResult = isSuperset(combo1, combo2);
+            console.assert(isSuperSetResult === false, "Test Case 4 Failed: Superset Check (Negative)");
+
+            // Test Case 5: Empty Valid Combination Set (to ensure no errors during search)
+            validCombinations.clear();
+
+            console.log("All Tests Passed!");
         }
 
-        testKeywordCombinations()
+        runTests();
+
+
     </script>
-
 </body>
-
 </html>
