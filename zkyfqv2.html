@@ -293,7 +293,16 @@
         async function init() {
             try {
                 // 加载CSV数据
-                await loadCSVData();
+                
+                
+                const response = await fetch('journals.json');
+                if (!response.ok) {
+                    throw new Error('无法加载期刊数据');
+                }
+                journalsData = await response.json();
+                filteredData = [...journalsData];
+                
+                //await loadCSVData();
                 
                 // 填充下拉菜单选项
                 populateDropdowns();
