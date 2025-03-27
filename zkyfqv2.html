@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,7 +10,7 @@
             font-family: Arial, sans-serif;
         }
         body {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
             padding: 20px;
             background-color: #f5f5f5;
@@ -144,6 +144,13 @@
         .sort-desc .sort-arrow {
             transform: rotate(0deg);
         }
+        /* 新增样式：分区颜色标识 */
+        .q1 { background-color: #4CAF50; color: white; font-weight: bold; }
+        .q2 { background-color: #8BC34A; color: white; font-weight: bold; }
+        .q3 { background-color: #FFC107; color: black; font-weight: bold; }
+        .q4 { background-color: #F44336; color: white; font-weight: bold; }
+        /* Top期刊标记 */
+        .top-star { color: gold; font-weight: bold; }
         @media (max-width: 768px) {
             .search-row {
                 flex-direction: column;
@@ -199,13 +206,17 @@
                 <label for="categoryRank">大类分区</label>
                 <select id="categoryRank">
                     <option value="">全部</option>
+                    <option value="1">1区</option>
+                    <option value="2">2区</option>
+                    <option value="3">3区</option>
+                    <option value="4">4区</option>
                 </select>
             </div>
         </div>
         
         <div class="search-row">
             <div class="search-field">
-                <label for="top">Top</label>
+                <label for="top">Top期刊</label>
                 <select id="top">
                     <option value="">全部</option>
                     <option value="是">是</option>
@@ -222,7 +233,34 @@
                 <label for="subCategoryRank">小类1分区</label>
                 <select id="subCategoryRank">
                     <option value="">全部</option>
+                    <option value="1">1区</option>
+                    <option value="2">2区</option>
+                    <option value="3">3区</option>
+                    <option value="4">4区</option>
                 </select>
+            </div>
+        </div>
+
+        <div class="search-row">
+            <div class="search-field">
+                <label for="ifQuartile">IF分区</label>
+                <select id="ifQuartile">
+                    <option value="">全部</option>
+                    <option value="Q1">Q1</option>
+                    <option value="Q2">Q2</option>
+                    <option value="Q3">Q3</option>
+                    <option value="Q4">Q4</option>
+                </select>
+            </div>
+            <div class="search-field">
+                <label for="country">国家</label>
+                <select id="country">
+                    <option value="">全部</option>
+                </select>
+            </div>
+            <div class="search-field">
+                <label for="if">影响因子</label>
+                <input type="text" id="if" placeholder="输入最小值 (如0.5)">
             </div>
         </div>
         
@@ -244,7 +282,24 @@
 
     <script>
         // 全局变量
-        let journalsData = [];
+        let journalsData = [
+            {
+                "Journal": "20 Et 21-Revue D Histoire",
+                "年份": 2025,
+                "ISSN": "2649-664X",
+                "Open Access": "否",
+                "Web of Science": "AHCI",
+                "大类": "历史学",
+                "大类分区": 4,
+                "Top": "否",
+                "小类1": "HISTORY",
+                "小类1分区": 4,
+                "Country": "FRANCE",
+                "IF(2023)": "<0.1",
+                "IF Quartile": "Q4"
+            }
+            // 可在此处添加更多期刊数据...
+        ];
         let filteredData = [];
         const itemsPerPage = 10;
         let currentPage = 1;
@@ -252,14 +307,8 @@
         let sortDirection = 'asc';
         
         // 初始化函数
-        async function init() {
+        function init() {
             try {
-                // 加载JSON数据
-                const response = await fetch('journals.json');
-                if (!response.ok) {
-                    throw new Error('无法加载期刊数据');
-                }
-                journalsData = await response.json();
                 filteredData = [...journalsData];
                 
                 // 填充下拉菜单选项
@@ -289,17 +338,13 @@
             const categoryValues = [...new Set(journalsData.map(item => item['大类']).filter(Boolean))];
             fillDropdown('category', categoryValues);
             
-            // 大类分区选项
-            const categoryRankValues = [...new Set(journalsData.map(item => String(item['大类分区'])).filter(Boolean))];
-            fillDropdown('categoryRank', categoryRankValues);
-            
             // 小类1选项
             const subCategoryValues = [...new Set(journalsData.map(item => item['小类1']).filter(Boolean))];
             fillDropdown('subCategory', subCategoryValues);
             
-            // 小类1分区选项
-            const subCategoryRankValues = [...new Set(journalsData.map(item => String(item['小类1分区'])).filter(Boolean))];
-            fillDropdown('subCategoryRank', subCategoryRankValues);
+            // 国家选项
+            const countryValues = [...new Set(journalsData.map(item => item['Country']).filter(Boolean))];
+            fillDropdown('country', countryValues);
         }
         
         // 填充下拉菜单的辅助函数
@@ -330,6 +375,9 @@
             const top = document.getElementById('top').value;
             const subCategory = document.getElementById('subCategory').value;
             const subCategoryRank = document.getElementById('subCategoryRank').value;
+            const ifQuartile = document.getElementById('ifQuartile').value;
+            const country = document.getElementById('country').value;
+            const ifValue = parseFloat(document.getElementById('if').value) || 0;
             
             filteredData = journalsData.filter(item => {
                 const journalMatch = item.Journal && item.Journal.toLowerCase().includes(journal);
@@ -337,13 +385,18 @@
                 const oaMatch = openAccess === '' || item['Open Access'] === openAccess;
                 const wosMatch = webOfScience === '' || item['Web of Science'] === webOfScience;
                 const categoryMatch = category === '' || item['大类'] === category;
-                const categoryRankMatch = categoryRank === '' || String(item['大类分区']) === categoryRank;
+                const categoryRankMatch = categoryRank === '' || item['大类分区'] == categoryRank;
                 const topMatch = top === '' || item['Top'] === top;
                 const subCategoryMatch = subCategory === '' || item['小类1'] === subCategory;
-                const subCategoryRankMatch = subCategoryRank === '' || String(item['小类1分区']) === subCategoryRank;
+                const subCategoryRankMatch = subCategoryRank === '' || item['小类1分区'] == subCategoryRank;
+                const ifQuartileMatch = ifQuartile === '' || item['IF Quartile'] === ifQuartile;
+                const countryMatch = country === '' || item['Country'] === country;
+                const ifMatch = !document.getElementById('if').value || 
+                               (parseFloat(item['IF(2023)'].replace('<', '')) >= ifValue);
                 
                 return journalMatch && issnMatch && oaMatch && wosMatch && categoryMatch 
-                      && categoryRankMatch && topMatch && subCategoryMatch && subCategoryRankMatch;
+                      && categoryRankMatch && topMatch && subCategoryMatch && subCategoryRankMatch
+                      && ifQuartileMatch && countryMatch && ifMatch;
             });
             
             // 重置排序和分页
@@ -364,6 +417,9 @@
             document.getElementById('top').value = '';
             document.getElementById('subCategory').value = '';
             document.getElementById('subCategoryRank').value = '';
+            document.getElementById('ifQuartile').value = '';
+            document.getElementById('country').value = '';
+            document.getElementById('if').value = '';
             
             filteredData = [...journalsData];
             sortColumn = null;
@@ -403,6 +459,9 @@
                             <th data-column="Top" class="${sortColumn === 'Top' ? 'sort-' + sortDirection : ''}">Top<span class="sort-arrow">▼</span></th>
                             <th data-column="小类1" class="${sortColumn === '小类1' ? 'sort-' + sortDirection : ''}">小类1<span class="sort-arrow">▼</span></th>
                             <th data-column="小类1分区" class="${sortColumn === '小类1分区' ? 'sort-' + sortDirection : ''}">小类1分区<span class="sort-arrow">▼</span></th>
+                            <th data-column="IF Quartile" class="${sortColumn === 'IF Quartile' ? 'sort-' + sortDirection : ''}">IF分区<span class="sort-arrow">▼</span></th>
+                            <th data-column="Country" class="${sortColumn === 'Country' ? 'sort-' + sortDirection : ''}">国家<span class="sort-arrow">▼</span></th>
+                            <th data-column="IF(2023)" class="${sortColumn === 'IF(2023)' ? 'sort-' + sortDirection : ''}">影响因子<span class="sort-arrow">▼</span></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -411,6 +470,8 @@
             // 填充数据
             const pageData = filteredData.slice(startIndex, endIndex);
             pageData.forEach(journal => {
+                const ifClass = journal['IF Quartile'] ? journal['IF Quartile'].toLowerCase() : '';
+                const topStar = journal['Top'] === '是' ? '⭐️' : '';
                 tableHTML += `
                     <tr>
                         <td>${journal.Journal || ''}</td>
@@ -419,9 +480,12 @@
                         <td>${journal['Web of Science'] || ''}</td>
                         <td>${journal['大类'] || ''}</td>
                         <td>${journal['大类分区'] || ''}</td>
-                        <td>${journal['Top'] || ''}</td>
+                        <td class="top-star">${topStar} ${journal['Top'] || ''}</td>
                         <td>${journal['小类1'] || ''}</td>
                         <td>${journal['小类1分区'] || ''}</td>
+                        <td class="${ifClass}">${journal['IF Quartile'] || ''}</td>
+                        <td>${journal['Country'] || ''}</td>
+                        <td>${journal['IF(2023)'] || ''}</td>
                     </tr>
                 `;
             });
@@ -453,6 +517,12 @@
                 // 处理数字类型排序
                 if (column === '大类分区' || column === '小类1分区') {
                     return sortDirection === 'asc' ? valA - valB : valB - valA;
+                }
+                
+                // 处理IF Quartile排序（Q1 > Q2 > Q3 > Q4）
+                if (column === 'IF Quartile') {
+                    const qMap = { 'Q1': 1, 'Q2': 2, 'Q3': 3, 'Q4': 4 };
+                    return sortDirection === 'asc' ? qMap[valA] - qMap[valB] : qMap[valB] - qMap[valA];
                 }
                 
                 // 处理字符串类型排序
