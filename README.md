@@ -14,7 +14,8 @@ BibTeX导出： 一键导出 BibTeX 格式，方便论文写作和文献管理�
 关键词的组合是非常关键的，可以缩小检索范围，精准找到所需要的文献
 
 
-4. [中科院期刊分区表2025查询](https://yakeworld.github.io/Academic_tools/zkyfqv2.html)
-中科院期刊分区表2025查询，数据来源于https://github.com/hitfyd/ShowJCR
+4. [期刊信息检索查询](https://yakeworld.github.io/Academic_tools/zkyfqv2.html)
+包括中科院2025期刊分区信息，SCI指数信息，支持筛选和排序。
+数据来源于https://github.com/hitfyd/ShowJCR
 
  
