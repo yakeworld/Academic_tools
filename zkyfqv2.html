@@ -282,24 +282,7 @@
 
     <script>
         // 全局变量
-        let journalsData = [
-            {
-                "Journal": "20 Et 21-Revue D Histoire",
-                "年份": 2025,
-                "ISSN": "2649-664X",
-                "Open Access": "否",
-                "Web of Science": "AHCI",
-                "大类": "历史学",
-                "大类分区": 4,
-                "Top": "否",
-                "小类1": "HISTORY",
-                "小类1分区": 4,
-                "Country": "FRANCE",
-                "IF(2023)": "<0.1",
-                "IF Quartile": "Q4"
-            }
-            // 可在此处添加更多期刊数据...
-        ];
+        let journalsData = [];
         let filteredData = [];
         const itemsPerPage = 10;
         let currentPage = 1;
@@ -307,9 +290,10 @@
         let sortDirection = 'asc';
         
         // 初始化函数
-        function init() {
+        async function init() {
             try {
-                filteredData = [...journalsData];
+                // 加载CSV数据
+                await loadCSVData();
                 
                 // 填充下拉菜单选项
                 populateDropdowns();
@@ -326,6 +310,46 @@
             } catch (error) {
                 document.querySelector('.loading').textContent = '加载数据失败: ' + error.message;
             }
+        }
+        
+        // 加载CSV数据
+        async function loadCSVData() {
+            // 示例CSV数据 - 实际使用时替换为从服务器加载journal.csv
+            const csvData = `Journal,年份,ISSN,Open Access,Web of Science,大类,大类分区,Top,小类1,小类1分区,Country,IF(2023),IF Quartile
+20 Et 21-Revue D Histoire,2025,2649-664X,否,AHCI,历史学,4,否,HISTORY,4,FRANCE,<0.1,Q4
+Nature,2023,0028-0836,是,SCI,综合性期刊,1,是,MULTIDISCIPLINARY SCIENCES,1,UNITED KINGDOM,64.8,Q1
+Science,2023,0036-8075,是,SCI,综合性期刊,1,是,MULTIDISCIPLINARY SCIENCES,1,UNITED STATES,56.9,Q1
+Cell,2023,0092-8674,否,SCI,生物学,1,是,CELL BIOLOGY,1,UNITED STATES,66.6,Q1
+The Lancet,2023,0140-6736,否,SCI,医学,1,是,MEDICINE, GENERAL & INTERNAL,1,UNITED KINGDOM,202.7,Q1`;
+
+            // 解析CSV
+            journalsData = parseCSV(csvData);
+            filteredData = [...journalsData];
+        }
+        
+        // 解析CSV为JSON
+        function parseCSV(csv) {
+            const lines = csv.split('\n');
+            const headers = lines[0].split(',').map(h => h.trim());
+            const result = [];
+            
+            for (let i = 1; i < lines.length; i++) {
+                if (!lines[i].trim()) continue;
+                
+                const obj = {};
+                const currentline = lines[i].split(',');
+                
+                for (let j = 0; j < headers.length; j++) {
+                    let value = currentline[j] ? currentline[j].trim() : '';
+                    // 处理数字类型字段
+                    if (headers[j] === '大类分区' || headers[j] === '小类1分区') {
+                        value = parseInt(value) || 0;
+                    }
+                    obj[headers[j]] = value;
+                }
+                result.push(obj);
+            }
+            return result;
         }
         
         // 填充下拉菜单
