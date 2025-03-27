@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>期刊数据查询系统</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+        body {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .search-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .search-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .search-field {
+            flex: 1;
+            min-width: 200px;
+        }
+        .search-field label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #4285f4;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #3367d6;
+        }
+        .action-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 15px;
+        }
+        #reset {
+            background-color: #f44336;
+        }
+        #reset:hover {
+            background-color: #d32f2f;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #4285f4;
+            color: white;
+            position: sticky;
+            top: 0;
+        }
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        .results-container {
+            margin-top: 20px;
+            overflow-x: auto;
+        }
+        .info {
+            margin-top: 20px;
+            text-align: center;
+            color: #666;
+        }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+            gap: 10px;
+        }
+        .pagination button {
+            padding: 5px 10px;
+        }
+        .current-page {
+            background-color: #3367d6;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            font-size: 18px;
+            color: #666;
+        }
+        .no-results {
+            text-align: center;
+            padding: 30px;
+            font-size: 18px;
+            color: #666;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        @media (max-width: 768px) {
+            .search-row {
+                flex-direction: column;
+                gap: 10px;
+            }
+            .search-field {
+                min-width: 100%;
+            }
+            th, td {
+                padding: 8px 10px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>期刊数据查询系统</h1>
+    
+    <div class="search-container">
+        <div class="search-row">
+            <div class="search-field">
+                <label for="journal">期刊名称</label>
+                <input type="text" id="journal" placeholder="输入期刊名称">
+            </div>
+            <div class="search-field">
+                <label for="issn">ISSN</label>
+                <input type="text" id="issn" placeholder="输入ISSN">
+            </div>
+            <div class="search-field">
+                <label for="openAccess">开放获取</label>
+                <select id="openAccess">
+                    <option value="">全部</option>
+                    <option value="是">是</option>
+                    <option value="否">否</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="search-row">
+            <div class="search-field">
+                <label for="webOfScience">Web of Science</label>
+                <select id="webOfScience">
+                    <option value="">全部</option>
+                </select>
+            </div>
+            <div class="search-field">
+                <label for="category">大类</label>
+                <select id="category">
+                    <option value="">全部</option>
+                </select>
+            </div>
+            <div class="search-field">
+                <label for="categoryRank">大类分区</label>
+                <select id="categoryRank">
+                    <option value="">全部</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="search-row">
+            <div class="search-field">
+                <label for="top">Top</label>
+                <select id="top">
+                    <option value="">全部</option>
+                    <option value="是">是</option>
+                    <option value="否">否</option>
+                </select>
+            </div>
+            <div class="search-field">
+                <label for="subCategory">小类1</label>
+                <select id="subCategory">
+                    <option value="">全部</option>
+                </select>
+            </div>
+            <div class="search-field">
+                <label for="subCategoryRank">小类1分区</label>
+                <select id="subCategoryRank">
+                    <option value="">全部</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="action-buttons">
+            <button id="search">搜索</button>
+            <button id="reset">重置</button>
+        </div>
+    </div>
+    
+    <div id="results-container" class="results-container">
+        <div class="loading">加载中，请稍候...</div>
+    </div>
+    
+    <div id="pagination" class="pagination"></div>
+    
+    <div class="info">
+        <p>数据总数: <span id="total-count">0</span> | 当前显示: <span id="current-range">0-0</span></p>
+    </div>
+
+    <script>
+        // 全局变量
+        let journalsData = [];
+        let filteredData = [];
+        const itemsPerPage = 10;
+        let currentPage = 1;
+        
+        // 初始化函数
+        async function init() {
+            try {
+                // 加载JSON数据
+                const response = await fetch('journals.json');
+                if (!response.ok) {
+                    throw new Error('无法加载期刊数据');
+                }
+                journalsData = await response.json();
+                filteredData = [...journalsData];
+                
+                // 填充下拉菜单选项
+                populateDropdowns();
+                
+                // 显示初始数据
+                updateResults();
+                
+                // 监听事件
+                document.getElementById('search').addEventListener('click', searchJournals);
+                document.getElementById('reset').addEventListener('click', resetFilters);
+                
+                // 移除加载状态
+                document.querySelector('.loading').style.display = 'none';
+            } catch (error) {
+                document.querySelector('.loading').textContent = '加载数据失败: ' + error.message;
+            }
+        }
+        
+        // 填充下拉菜单
+        function populateDropdowns() {
+            // Web of Science 选项
+            const wosValues = [...new Set(journalsData.map(item => item['Web of Science']).filter(Boolean))];
+            fillDropdown('webOfScience', wosValues);
+            
+            // 大类选项
+            const categoryValues = [...new Set(journalsData.map(item => item['大类']).filter(Boolean))];
+            fillDropdown('category', categoryValues);
+            
+            // 大类分区选项
+            const categoryRankValues = [...new Set(journalsData.map(item => item['大类分区']).filter(Boolean))];
+            fillDropdown('categoryRank', categoryRankValues);
+            
+            // 小类1选项
+            const subCategoryValues = [...new Set(journalsData.map(item => item['小类1']).filter(Boolean))];
+            fillDropdown('subCategory', subCategoryValues);
+            
+            // 小类1分区选项
+            const subCategoryRankValues = [...new Set(journalsData.map(item => item['小类1分区']).filter(Boolean))];
+            fillDropdown('subCategoryRank', subCategoryRankValues);
+        }
+        
+        // 填充下拉菜单的辅助函数
+        function fillDropdown(elementId, values) {
+            const dropdown = document.getElementById(elementId);
+            const defaultOption = dropdown.querySelector('option');
+            dropdown.innerHTML = '';
+            dropdown.appendChild(defaultOption);
+            
+            values.sort().forEach(value => {
+                if (value) {
+                    const option = document.createElement('option');
+                    option.value = value;
+                    option.textContent = value;
+                    dropdown.appendChild(option);
+                }
+            });
+        }
+        
+        // 搜索期刊
+        function searchJournals() {
+            const journal = document.getElementById('journal').value.toLowerCase();
+            const issn = document.getElementById('issn').value.toLowerCase();
+            const openAccess = document.getElementById('openAccess').value;
+            const webOfScience = document.getElementById('webOfScience').value;
+            const category = document.getElementById('category').value;
+            const categoryRank = document.getElementById('categoryRank').value;
+            const top = document.getElementById('top').value;
+            const subCategory = document.getElementById('subCategory').value;
+            const subCategoryRank = document.getElementById('subCategoryRank').value;
+            
+            filteredData = journalsData.filter(item => {
+                const journalMatch = item.Journal && item.Journal.toLowerCase().includes(journal);
+                const issnMatch = item.ISSN && item.ISSN.toLowerCase().includes(issn);
+                const oaMatch = openAccess === '' || item['Open Access'] === openAccess;
+                const wosMatch = webOfScience === '' || item['Web of Science'] === webOfScience;
+                const categoryMatch = category === '' || item['大类'] === category;
+                const categoryRankMatch = categoryRank === '' || item['大类分区'] === categoryRank;
+                const topMatch = top === '' || item['Top'] === top;
+                const subCategoryMatch = subCategory === '' || item['小类1'] === subCategory;
+                const subCategoryRankMatch = subCategoryRank === '' || item['小类1分区'] === subCategoryRank;
+                
+                return journalMatch && issnMatch && oaMatch && wosMatch && categoryMatch 
+                      && categoryRankMatch && topMatch && subCategoryMatch && subCategoryRankMatch;
+            });
+            
+            currentPage = 1;
+            updateResults();
+        }
+        
+        // 重置过滤器
+        function resetFilters() {
+            document.getElementById('journal').value = '';
+            document.getElementById('issn').value = '';
+            document.getElementById('openAccess').value = '';
+            document.getElementById('webOfScience').value = '';
+            document.getElementById('category').value = '';
+            document.getElementById('categoryRank').value = '';
+            document.getElementById('top').value = '';
+            document.getElementById('subCategory').value = '';
+            document.getElementById('subCategoryRank').value = '';
+            
+            filteredData = [...journalsData];
+            currentPage = 1;
+            updateResults();
+        }
+        
+        // 更新结果显示
+        function updateResults() {
+            const resultsContainer = document.getElementById('results-container');
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = Math.min(startIndex + itemsPerPage, filteredData.length);
+            
+            // 更新计数信息
+            document.getElementById('total-count').textContent = filteredData.length;
+            document.getElementById('current-range').textContent = 
+                filteredData.length > 0 ? `${startIndex + 1}-${endIndex}` : '0-0';
+            
+            if (filteredData.length === 0) {
+                resultsContainer.innerHTML = '<div class="no-results">没有找到匹配的期刊</div>';
+                document.getElementById('pagination').innerHTML = '';
+                return;
+            }
+            
+            // 创建表格
+            let tableHTML = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>期刊名称</th>
+                            <th>ISSN</th>
+                            <th>开放获取</th>
+                            <th>Web of Science</th>
+                            <th>大类</th>
+                            <th>大类分区</th>
+                            <th>Top</th>
+                            <th>小类1</th>
+                            <th>小类1分区</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            // 填充数据
+            const pageData = filteredData.slice(startIndex, endIndex);
+            pageData.forEach(journal => {
+                tableHTML += `
+                    <tr>
+                        <td>${journal.Journal || ''}</td>
+                        <td>${journal.ISSN || ''}</td>
+                        <td>${journal['Open Access'] || ''}</td>
+                        <td>${journal['Web of Science'] || ''}</td>
+                        <td>${journal['大类'] || ''}</td>
+                        <td>${journal['大类分区'] || ''}</td>
+                        <td>${journal['Top'] || ''}</td>
+                        <td>${journal['小类1'] || ''}</td>
+                        <td>${journal['小类1分区'] || ''}</td>
+                    </tr>
+                `;
+            });
+            
+            tableHTML += `
+                    </tbody>
+                </table>
+            `;
+            
+            resultsContainer.innerHTML = tableHTML;
+            
+            // 更新分页
+            updatePagination();
+        }
+        
+        // 更新分页控件
+        function updatePagination() {
+            const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+            const paginationContainer = document.getElementById('pagination');
+            paginationContainer.innerHTML = '';
+            
+            if (totalPages <= 1) return;
+            
+            // 添加页码按钮
+            const maxDisplayedPages = 5;
+            let startPage = Math.max(1, currentPage - Math.floor(maxDisplayedPages / 2));
+            let endPage = Math.min(totalPages, startPage + maxDisplayedPages - 1);
+            
+            if (endPage - startPage + 1 < maxDisplayedPages) {
+                startPage = Math.max(1, endPage - maxDisplayedPages + 1);
+            }
+            
+            // 上一页按钮
+            if (currentPage > 1) {
+                addPageButton('上一页', currentPage - 1);
+            }
+            
+            // 第一页按钮
+            if (startPage > 1) {
+                addPageButton('1', 1);
+                if (startPage > 2) {
+                    addEllipsis();
+                }
+            }
+            
+            // 页码按钮
+            for (let i = startPage; i <= endPage; i++) {
+                addPageButton(i.toString(), i, i === currentPage);
+            }
+            
+            // 最后一页按钮
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) {
+                    addEllipsis();
+                }
+                addPageButton(totalPages.toString(), totalPages);
+            }
+            
+            // 下一页按钮
+            if (currentPage < totalPages) {
+                addPageButton('下一页', currentPage + 1);
+            }
+        }
+        
+        // 添加分页按钮
+        function addPageButton(text, page, isCurrent = false) {
+            const button = document.createElement('button');
+            button.textContent = text;
+            if (isCurrent) {
+                button.classList.add('current-page');
+            }
+            button.addEventListener('click', () => {
+                currentPage = page;
+                updateResults();
+                window.scrollTo(0, 0);
+            });
+            document.getElementById('pagination').appendChild(button);
+        }
+        
+        // 添加省略号
+        function addEllipsis() {
+            const span = document.createElement('span');
+            span.textContent = '...';
+            span.style.padding = '5px';
+            document.getElementById('pagination').appendChild(span);
+        }
+        
+        // 页面加载时初始化
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
