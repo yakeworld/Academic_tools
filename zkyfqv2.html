@@ -321,7 +321,7 @@
         // 填充下拉菜单
         function populateDropdowns() {
             // Web of Science 选项
-            const wosValues = [...new Set(journalsData.map(item => item['Web of Science']).filter(Boolean))];
+            const wosValues = [...new Set(journalsData.map(item => item['Web of Science_x']).filter(Boolean))];
             fillDropdown('webOfScience', wosValues);
             
             // 大类选项
@@ -370,10 +370,10 @@
             const ifQuartile = document.getElementById('ifQuartile').value;
             
             filteredData = journalsData.filter(item => {
-                const journalMatch = item.Journal && item.Journal.toLowerCase().includes(journal);
+                const journalMatch = item.Journal_x && item.Journal_x.toLowerCase().includes(journal);
                 const issnMatch = item.ISSN && item.ISSN.toLowerCase().includes(issn);
                 const oaMatch = openAccess === '' || item['Open Access'] === openAccess;
-                const wosMatch = webOfScience === '' || item['Web of Science'] === webOfScience;
+                const wosMatch = webOfScience === '' || item['Web of Science_x'] === webOfScience;
                 const categoryMatch = category === '' || item['大类'] === category;
                 const categoryRankMatch = categoryRank === '' || String(item['大类分区']) === categoryRank;
                 const topMatch = top === '' || item['Top'] === top;
@@ -456,10 +456,10 @@
                 <table>
                     <thead>
                         <tr>
-                            <th data-column="Journal" class="${sortColumn === 'Journal' ? 'sort-' + sortDirection : ''}">期刊名称<span class="sort-arrow">▼</span></th>
+                            <th data-column="Journal_x" class="${sortColumn === 'Journal_x' ? 'sort-' + sortDirection : ''}">期刊名称<span class="sort-arrow">▼</span></th>
                             <th data-column="ISSN" class="${sortColumn === 'ISSN' ? 'sort-' + sortDirection : ''}">ISSN<span class="sort-arrow">▼</span></th>
                             <th data-column="Open Access" class="${sortColumn === 'Open Access' ? 'sort-' + sortDirection : ''}">开放获取<span class="sort-arrow">▼</span></th>
-                            <th data-column="Web of Science" class="${sortColumn === 'Web of Science' ? 'sort-' + sortDirection : ''}">Web of Science<span class="sort-arrow">▼</span></th>
+                            <th data-column="Web of Science_x" class="${sortColumn === 'Web of Science_x' ? 'sort-' + sortDirection : ''}">Web of Science<span class="sort-arrow">▼</span></th>
                             <th data-column="大类" class="${sortColumn === '大类' ? 'sort-' + sortDirection : ''}">大类<span class="sort-arrow">▼</span></th>
                             <th data-column="大类分区" class="${sortColumn === '大类分区' ? 'sort-' + sortDirection : ''}">大类分区<span class="sort-arrow">▼</span></th>
                             <th data-column="Top" class="${sortColumn === 'Top' ? 'sort-' + sortDirection : ''}">Top<span class="sort-arrow">▼</span></th>
@@ -478,10 +478,10 @@
             pageData.forEach(journal => {
                 tableHTML += `
                     <tr>
-                        <td>${journal.Journal || ''}</td>
+                        <td>${journal.Journal_x || ''}</td>
                         <td>${journal.ISSN || ''}</td>
                         <td>${journal['Open Access'] || ''}</td>
-                        <td>${journal['Web of Science'] || ''}</td>
+                        <td>${journal['Web of Science_x'] || ''}</td>
                         <td>${journal['大类'] || ''}</td>
                         <td>${journal['大类分区'] || ''}</td>
                         <td>${journal['Top'] || ''}</td>
