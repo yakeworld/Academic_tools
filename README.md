@@ -13,4 +13,8 @@ BibTeX导出： 一键导出 BibTeX 格式，方便论文写作和文献管理�
 3. [keywords_find](https://yakeworld.github.io/Academic_tools/keywords_find.html)
 关键词的组合是非常关键的，可以缩小检索范围，精准找到所需要的文献
 
+
+4. [中科院期刊分区表2025查询](https://yakeworld.github.io/Academic_tools/zkyfq.html)
+中科院期刊分区表2025查询，数据来源于https://github.com/hitfyd/ShowJCR
+
  
