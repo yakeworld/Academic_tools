@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,7 +10,7 @@
             font-family: Arial, sans-serif;
         }
         body {
-            max-width: 1400px;
+            max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
             background-color: #f5f5f5;
@@ -144,13 +144,6 @@
         .sort-desc .sort-arrow {
             transform: rotate(0deg);
         }
-        /* 新增样式：分区颜色标识 */
-        .q1 { background-color: #4CAF50; color: white; font-weight: bold; }
-        .q2 { background-color: #8BC34A; color: white; font-weight: bold; }
-        .q3 { background-color: #FFC107; color: black; font-weight: bold; }
-        .q4 { background-color: #F44336; color: white; font-weight: bold; }
-        /* Top期刊标记 */
-        .top-star { color: gold; font-weight: bold; }
         @media (max-width: 768px) {
             .search-row {
                 flex-direction: column;
@@ -206,17 +199,17 @@
                 <label for="categoryRank">大类分区</label>
                 <select id="categoryRank">
                     <option value="">全部</option>
-                    <option value="1">1区</option>
-                    <option value="2">2区</option>
-                    <option value="3">3区</option>
-                    <option value="4">4区</option>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
                 </select>
             </div>
         </div>
         
         <div class="search-row">
             <div class="search-field">
-                <label for="top">Top期刊</label>
+                <label for="top">Top</label>
                 <select id="top">
                     <option value="">全部</option>
                     <option value="是">是</option>
@@ -233,17 +226,35 @@
                 <label for="subCategoryRank">小类1分区</label>
                 <select id="subCategoryRank">
                     <option value="">全部</option>
-                    <option value="1">1区</option>
-                    <option value="2">2区</option>
-                    <option value="3">3区</option>
-                    <option value="4">4区</option>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
                 </select>
             </div>
         </div>
-
+        
         <div class="search-row">
             <div class="search-field">
-                <label for="ifQuartile">IF分区</label>
+                <label for="country">国家/地区</label>
+                <select id="country">
+                    <option value="">全部</option>
+                </select>
+            </div>
+            <div class="search-field">
+                <label for="impactFactor">影响因子(2023)</label>
+                <select id="impactFactor">
+                    <option value="">全部</option>
+                    <option value="<0.1">&lt;0.1</option>
+                    <option value="0.1-1">0.1-1</option>
+                    <option value="1-2">1-2</option>
+                    <option value="2-3">2-3</option>
+                    <option value="3-5">3-5</option>
+                    <option value=">5">&gt;5</option>
+                </select>
+            </div>
+            <div class="search-field">
+                <label for="ifQuartile">IF Quartile(2023)</label>
                 <select id="ifQuartile">
                     <option value="">全部</option>
                     <option value="Q1">Q1</option>
@@ -251,16 +262,6 @@
                     <option value="Q3">Q3</option>
                     <option value="Q4">Q4</option>
                 </select>
-            </div>
-            <div class="search-field">
-                <label for="country">国家</label>
-                <select id="country">
-                    <option value="">全部</option>
-                </select>
-            </div>
-            <div class="search-field">
-                <label for="if">影响因子</label>
-                <input type="text" id="if" placeholder="输入最小值 (如0.5)">
             </div>
         </div>
         
@@ -292,17 +293,13 @@
         // 初始化函数
         async function init() {
             try {
-                // 加载CSV数据
-                
-                
+                // 加载JSON数据
                 const response = await fetch('journals.json');
                 if (!response.ok) {
                     throw new Error('无法加载期刊数据');
                 }
                 journalsData = await response.json();
                 filteredData = [...journalsData];
-                
-                //await loadCSVData();
                 
                 // 填充下拉菜单选项
                 populateDropdowns();
@@ -321,46 +318,6 @@
             }
         }
         
-        // 加载CSV数据
-        async function loadCSVData() {
-            // 示例CSV数据 - 实际使用时替换为从服务器加载journal.csv
-            const csvData = `Journal,年份,ISSN,Open Access,Web of Science,大类,大类分区,Top,小类1,小类1分区,Country,IF(2023),IF Quartile
-20 Et 21-Revue D Histoire,2025,2649-664X,否,AHCI,历史学,4,否,HISTORY,4,FRANCE,<0.1,Q4
-Nature,2023,0028-0836,是,SCI,综合性期刊,1,是,MULTIDISCIPLINARY SCIENCES,1,UNITED KINGDOM,64.8,Q1
-Science,2023,0036-8075,是,SCI,综合性期刊,1,是,MULTIDISCIPLINARY SCIENCES,1,UNITED STATES,56.9,Q1
-Cell,2023,0092-8674,否,SCI,生物学,1,是,CELL BIOLOGY,1,UNITED STATES,66.6,Q1
-The Lancet,2023,0140-6736,否,SCI,医学,1,是,MEDICINE, GENERAL & INTERNAL,1,UNITED KINGDOM,202.7,Q1`;
-
-            // 解析CSV
-            journalsData = parseCSV(csvData);
-            filteredData = [...journalsData];
-        }
-        
-        // 解析CSV为JSON
-        function parseCSV(csv) {
-            const lines = csv.split('\n');
-            const headers = lines[0].split(',').map(h => h.trim());
-            const result = [];
-            
-            for (let i = 1; i < lines.length; i++) {
-                if (!lines[i].trim()) continue;
-                
-                const obj = {};
-                const currentline = lines[i].split(',');
-                
-                for (let j = 0; j < headers.length; j++) {
-                    let value = currentline[j] ? currentline[j].trim() : '';
-                    // 处理数字类型字段
-                    if (headers[j] === '大类分区' || headers[j] === '小类1分区') {
-                        value = parseInt(value) || 0;
-                    }
-                    obj[headers[j]] = value;
-                }
-                result.push(obj);
-            }
-            return result;
-        }
-        
         // 填充下拉菜单
         function populateDropdowns() {
             // Web of Science 选项
@@ -375,7 +332,7 @@ The Lancet,2023,0140-6736,否,SCI,医学,1,是,MEDICINE, GENERAL & INTERNAL,1,UN
             const subCategoryValues = [...new Set(journalsData.map(item => item['小类1']).filter(Boolean))];
             fillDropdown('subCategory', subCategoryValues);
             
-            // 国家选项
+            // 国家/地区选项
             const countryValues = [...new Set(journalsData.map(item => item['Country']).filter(Boolean))];
             fillDropdown('country', countryValues);
         }
@@ -408,9 +365,9 @@ The Lancet,2023,0140-6736,否,SCI,医学,1,是,MEDICINE, GENERAL & INTERNAL,1,UN
             const top = document.getElementById('top').value;
             const subCategory = document.getElementById('subCategory').value;
             const subCategoryRank = document.getElementById('subCategoryRank').value;
-            const ifQuartile = document.getElementById('ifQuartile').value;
             const country = document.getElementById('country').value;
-            const ifValue = parseFloat(document.getElementById('if').value) || 0;
+            const impactFactor = document.getElementById('impactFactor').value;
+            const ifQuartile = document.getElementById('ifQuartile').value;
             
             filteredData = journalsData.filter(item => {
                 const journalMatch = item.Journal && item.Journal.toLowerCase().includes(journal);
@@ -418,18 +375,34 @@ The Lancet,2023,0140-6736,否,SCI,医学,1,是,MEDICINE, GENERAL & INTERNAL,1,UN
                 const oaMatch = openAccess === '' || item['Open Access'] === openAccess;
                 const wosMatch = webOfScience === '' || item['Web of Science'] === webOfScience;
                 const categoryMatch = category === '' || item['大类'] === category;
-                const categoryRankMatch = categoryRank === '' || item['大类分区'] == categoryRank;
+                const categoryRankMatch = categoryRank === '' || String(item['大类分区']) === categoryRank;
                 const topMatch = top === '' || item['Top'] === top;
                 const subCategoryMatch = subCategory === '' || item['小类1'] === subCategory;
-                const subCategoryRankMatch = subCategoryRank === '' || item['小类1分区'] == subCategoryRank;
-                const ifQuartileMatch = ifQuartile === '' || item['IF Quartile'] === ifQuartile;
+                const subCategoryRankMatch = subCategoryRank === '' || String(item['小类1分区']) === subCategoryRank;
                 const countryMatch = country === '' || item['Country'] === country;
-                const ifMatch = !document.getElementById('if').value || 
-                               (parseFloat(item['IF(2023)'].replace('<', '')) >= ifValue);
+                
+                // 处理影响因子筛选
+                let ifMatch = true;
+                if (impactFactor !== '') {
+                    const ifValue = item['IF(2023)'];
+                    if (ifValue) {
+                        const numValue = parseFloat(ifValue.replace(/[^0-9.]/g, ''));
+                        if (impactFactor === '<0.1' && numValue >= 0.1) ifMatch = false;
+                        else if (impactFactor === '0.1-1' && (numValue < 0.1 || numValue > 1)) ifMatch = false;
+                        else if (impactFactor === '1-2' && (numValue < 1 || numValue > 2)) ifMatch = false;
+                        else if (impactFactor === '2-3' && (numValue < 2 || numValue > 3)) ifMatch = false;
+                        else if (impactFactor === '3-5' && (numValue < 3 || numValue > 5)) ifMatch = false;
+                        else if (impactFactor === '>5' && numValue <= 5) ifMatch = false;
+                    } else {
+                        ifMatch = false;
+                    }
+                }
+                
+                const ifQuartileMatch = ifQuartile === '' || item['IF Quartile(2023)'] === ifQuartile;
                 
                 return journalMatch && issnMatch && oaMatch && wosMatch && categoryMatch 
                       && categoryRankMatch && topMatch && subCategoryMatch && subCategoryRankMatch
-                      && ifQuartileMatch && countryMatch && ifMatch;
+                      && countryMatch && ifMatch && ifQuartileMatch;
             });
             
             // 重置排序和分页
@@ -450,9 +423,9 @@ The Lancet,2023,0140-6736,否,SCI,医学,1,是,MEDICINE, GENERAL & INTERNAL,1,UN
             document.getElementById('top').value = '';
             document.getElementById('subCategory').value = '';
             document.getElementById('subCategoryRank').value = '';
-            document.getElementById('ifQuartile').value = '';
             document.getElementById('country').value = '';
-            document.getElementById('if').value = '';
+            document.getElementById('impactFactor').value = '';
+            document.getElementById('ifQuartile').value = '';
             
             filteredData = [...journalsData];
             sortColumn = null;
@@ -492,9 +465,9 @@ The Lancet,2023,0140-6736,否,SCI,医学,1,是,MEDICINE, GENERAL & INTERNAL,1,UN
                             <th data-column="Top" class="${sortColumn === 'Top' ? 'sort-' + sortDirection : ''}">Top<span class="sort-arrow">▼</span></th>
                             <th data-column="小类1" class="${sortColumn === '小类1' ? 'sort-' + sortDirection : ''}">小类1<span class="sort-arrow">▼</span></th>
                             <th data-column="小类1分区" class="${sortColumn === '小类1分区' ? 'sort-' + sortDirection : ''}">小类1分区<span class="sort-arrow">▼</span></th>
-                            <th data-column="IF Quartile" class="${sortColumn === 'IF Quartile' ? 'sort-' + sortDirection : ''}">IF分区<span class="sort-arrow">▼</span></th>
-                            <th data-column="Country" class="${sortColumn === 'Country' ? 'sort-' + sortDirection : ''}">国家<span class="sort-arrow">▼</span></th>
-                            <th data-column="IF(2023)" class="${sortColumn === 'IF(2023)' ? 'sort-' + sortDirection : ''}">影响因子<span class="sort-arrow">▼</span></th>
+                            <th data-column="Country" class="${sortColumn === 'Country' ? 'sort-' + sortDirection : ''}">国家/地区<span class="sort-arrow">▼</span></th>
+                            <th data-column="IF(2023)" class="${sortColumn === 'IF(2023)' ? 'sort-' + sortDirection : ''}">影响因子(2023)<span class="sort-arrow">▼</span></th>
+                            <th data-column="IF Quartile(2023)" class="${sortColumn === 'IF Quartile(2023)' ? 'sort-' + sortDirection : ''}">IF Quartile(2023)<span class="sort-arrow">▼</span></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -503,8 +476,6 @@ The Lancet,2023,0140-6736,否,SCI,医学,1,是,MEDICINE, GENERAL & INTERNAL,1,UN
             // 填充数据
             const pageData = filteredData.slice(startIndex, endIndex);
             pageData.forEach(journal => {
-                const ifClass = journal['IF Quartile'] ? journal['IF Quartile'].toLowerCase() : '';
-                const topStar = journal['Top'] === '是' ? '⭐️' : '';
                 tableHTML += `
                     <tr>
                         <td>${journal.Journal || ''}</td>
@@ -513,12 +484,12 @@ The Lancet,2023,0140-6736,否,SCI,医学,1,是,MEDICINE, GENERAL & INTERNAL,1,UN
                         <td>${journal['Web of Science'] || ''}</td>
                         <td>${journal['大类'] || ''}</td>
                         <td>${journal['大类分区'] || ''}</td>
-                        <td class="top-star">${topStar} ${journal['Top'] || ''}</td>
+                        <td>${journal['Top'] || ''}</td>
                         <td>${journal['小类1'] || ''}</td>
                         <td>${journal['小类1分区'] || ''}</td>
-                        <td class="${ifClass}">${journal['IF Quartile'] || ''}</td>
                         <td>${journal['Country'] || ''}</td>
                         <td>${journal['IF(2023)'] || ''}</td>
+                        <td>${journal['IF Quartile(2023)'] || ''}</td>
                     </tr>
                 `;
             });
@@ -552,10 +523,19 @@ The Lancet,2023,0140-6736,否,SCI,医学,1,是,MEDICINE, GENERAL & INTERNAL,1,UN
                     return sortDirection === 'asc' ? valA - valB : valB - valA;
                 }
                 
-                // 处理IF Quartile排序（Q1 > Q2 > Q3 > Q4）
-                if (column === 'IF Quartile') {
-                    const qMap = { 'Q1': 1, 'Q2': 2, 'Q3': 3, 'Q4': 4 };
-                    return sortDirection === 'asc' ? qMap[valA] - qMap[valB] : qMap[valB] - qMap[valA];
+                // 处理影响因子排序
+                if (column === 'IF(2023)') {
+                    const numA = parseFloat((valA || '0').replace(/[^0-9.]/g, ''));
+                    const numB = parseFloat((valB || '0').replace(/[^0-9.]/g, ''));
+                    return sortDirection === 'asc' ? numA - numB : numB - numA;
+                }
+                
+                // 处理IF Quartile排序
+                if (column === 'IF Quartile(2023)') {
+                    const quartileOrder = {'Q1': 1, 'Q2': 2, 'Q3': 3, 'Q4': 4};
+                    const orderA = quartileOrder[valA] || 5;
+                    const orderB = quartileOrder[valB] || 5;
+                    return sortDirection === 'asc' ? orderA - orderB : orderB - orderA;
                 }
                 
                 // 处理字符串类型排序
