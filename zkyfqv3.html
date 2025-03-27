@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>期刊数据查询系统</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+        body {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .search-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .search-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        /* Ensure consistent spacing for the last row */
+        .search-row:last-of-type {
+            margin-bottom: 0;
+        }
+        .search-field {
+            flex: 1;
+            min-width: 200px;
+        }
+        .search-field label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #4285f4;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #3367d6;
+        }
+        .action-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px; /* Added margin-top for spacing */
+        }
+        #reset {
+            background-color: #f44336;
+        }
+        #reset:hover {
+            background-color: #d32f2f;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+            white-space: nowrap; /* Prevent text wrapping */
+        }
+        th {
+            background-color: #4285f4;
+            color: white;
+            position: sticky;
+            top: 0;
+            cursor: pointer;
+            user-select: none;
+        }
+        /* Allow wrapping for specific columns if needed, e.g., Journal Name */
+        /* th:first-child, td:first-child { white-space: normal; } */
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        .results-container {
+            margin-top: 20px;
+            overflow-x: auto; /* Enable horizontal scrolling for table */
+        }
+        .info {
+            margin-top: 20px;
+            text-align: center;
+            color: #666;
+        }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center; /* Vertically center items */
+            flex-wrap: wrap; /* Allow wrapping on smaller screens */
+            margin-top: 20px;
+            gap: 5px; /* Reduced gap */
+        }
+        .pagination button, .pagination span {
+            padding: 5px 10px;
+        }
+        .pagination button {
+             background-color: #eee;
+             border: 1px solid #ddd;
+             cursor: pointer;
+        }
+        .pagination button:hover {
+             background-color: #ddd;
+        }
+        .pagination .current-page {
+            background-color: #4285f4;
+            color: white;
+            border-color: #4285f4;
+            font-weight: bold;
+        }
+        .pagination span {
+            color: #666;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            font-size: 18px;
+            color: #666;
+        }
+        .no-results {
+            text-align: center;
+            padding: 30px;
+            font-size: 18px;
+            color: #666;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .sort-arrow {
+            display: inline-block;
+            margin-left: 5px;
+            transition: transform 0.3s;
+            /* Default arrow down */
+            width: 0;
+            height: 0;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+            border-top: 5px solid currentColor; /* Use currentColor */
+            vertical-align: middle;
+        }
+        .sort-asc .sort-arrow {
+            transform: rotate(180deg);
+        }
+        .sort-desc .sort-arrow {
+            transform: rotate(0deg);
+        }
+        th.sort-asc, th.sort-desc {
+            background-color: #3367d6; /* Highlight sorted column */
+        }
+
+        @media (max-width: 992px) {
+             th, td {
+                font-size: 13px;
+                padding: 10px 12px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .search-row {
+                flex-direction: column;
+                gap: 10px;
+            }
+            .search-field {
+                min-width: 100%;
+            }
+            th, td {
+                padding: 8px 10px;
+                font-size: 12px;
+            }
+            .pagination {
+                gap: 3px;
+            }
+             .pagination button, .pagination span {
+                padding: 4px 8px;
+                font-size: 12px;
+            }
+        }
+         @media (max-width: 480px) {
+             h1 {
+                 font-size: 1.5em;
+             }
+              th, td {
+                font-size: 11px;
+                padding: 6px 8px;
+            }
+              .pagination button, .pagination span {
+                padding: 3px 6px;
+                font-size: 11px;
+            }
+         }
+    </style>
+</head>
+<body>
+    <h1>期刊数据查询系统</h1>
+
+    <div class="search-container">
+        <div class="search-row">
+            <div class="search-field">
+                <label for="journal">期刊名称</label>
+                <input type="text" id="journal" placeholder="输入期刊名称 (Journal_x)">
+            </div>
+            <div class="search-field">
+                <label for="issn">ISSN</label>
+                <input type="text" id="issn" placeholder="输入ISSN">
+            </div>
+            <div class="search-field">
+                <label for="openAccess">开放获取</label>
+                <select id="openAccess">
+                    <option value="">全部</option>
+                    <option value="是">是</option>
+                    <option value="否">否</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="search-row">
+            <div class="search-field">
+                <label for="webOfScience">Web of Science</label>
+                <select id="webOfScience">
+                    <option value="">全部</option>
+                    <!-- Options populated by JS -->
+                </select>
+            </div>
+            <div class="search-field">
+                <label for="category">大类</label>
+                <select id="category">
+                    <option value="">全部</option>
+                    <!-- Options populated by JS -->
+                </select>
+            </div>
+            <div class="search-field">
+                <label for="categoryRank">大类分区</label>
+                <select id="categoryRank">
+                    <option value="">全部</option>
+                    <!-- Options populated by JS -->
+                </select>
+            </div>
+        </div>
+
+        <div class="search-row">
+            <div class="search-field">
+                <label for="top">Top 期刊</label>
+                <select id="top">
+                    <option value="">全部</option>
+                    <option value="是">是</option>
+                    <option value="否">否</option>
+                </select>
+            </div>
+             <div class="search-field">
+                <label for="subCategory">小类1</label>
+                <select id="subCategory">
+                    <option value="">全部</option>
+                    <!-- Options populated by JS -->
+                </select>
+            </div>
+            <div class="search-field">
+                <label for="subCategoryRank">小类1分区</label>
+                <select id="subCategoryRank">
+                    <option value="">全部</option>
+                     <!-- Options populated by JS -->
+                </select>
+            </div>
+        </div>
+
+        <!-- New Search Row -->
+        <div class="search-row">
+            <div class="search-field">
+                <label for="year">年份</label>
+                <input type="number" id="year" placeholder="输入年份">
+            </div>
+            <div class="search-field">
+                <label for="country">Country</label>
+                 <select id="country">
+                    <option value="">全部</option>
+                     <!-- Options populated by JS -->
+                </select>
+            </div>
+            <!-- Add a placeholder div to maintain alignment if needed, or add another field -->
+            <div class="search-field" style="visibility: hidden;"></div>
+        </div>
+
+        <div class="action-buttons">
+            <button id="search">搜索</button>
+            <button id="reset">重置</button>
+        </div>
+    </div>
+
+    <div id="results-container" class="results-container">
+        <div class="loading">加载中，请稍候...</div>
+        <!-- Table will be inserted here -->
+    </div>
+
+    <div id="pagination" class="pagination">
+        <!-- Pagination buttons will be inserted here -->
+    </div>
+
+    <div class="info">
+        <p>数据总数: <span id="total-count">0</span> | 当前显示: <span id="current-range">0-0</span></p>
+        <p id="data-source-info" style="font-size: 0.8em; color: #888;"></p>
+    </div>
+
+    <script>
+        // --- Configuration ---
+        const DATA_FILE_PATH = 'journals.json'; // Path to your JSON data file
+        const ITEMS_PER_PAGE = 15; // Number of items per table page
+
+        // --- Global Variables ---
+        let journalsData = [];      // Stores the full dataset
+        let filteredData = [];      // Stores the currently filtered/sorted dataset
+        let currentPage = 1;        // Current page number
+        let sortColumn = null;      // Column currently being sorted
+        let sortDirection = 'asc';  // Sort direction ('asc' or 'desc')
+
+        // --- DOM Element References ---
+        const journalInput = document.getElementById('journal');
+        const issnInput = document.getElementById('issn');
+        const openAccessSelect = document.getElementById('openAccess');
+        const webOfScienceSelect = document.getElementById('webOfScience');
+        const categorySelect = document.getElementById('category');
+        const categoryRankSelect = document.getElementById('categoryRank');
+        const topSelect = document.getElementById('top');
+        const subCategorySelect = document.getElementById('subCategory');
+        const subCategoryRankSelect = document.getElementById('subCategoryRank');
+        const yearInput = document.getElementById('year'); // New field
+        const countrySelect = document.getElementById('country'); // New field
+
+        const searchButton = document.getElementById('search');
+        const resetButton = document.getElementById('reset');
+        const resultsContainer = document.getElementById('results-container');
+        const paginationContainer = document.getElementById('pagination');
+        const totalCountSpan = document.getElementById('total-count');
+        const currentRangeSpan = document.getElementById('current-range');
+        const loadingDiv = document.querySelector('.loading');
+        const dataSourceInfo = document.getElementById('data-source-info');
+
+        // --- Initialization ---
+        async function init() {
+            try {
+                loadingDiv.style.display = 'block';
+                resultsContainer.innerHTML = ''; // Clear previous results
+                paginationContainer.innerHTML = '';
+
+                // Load JSON data
+                const response = await fetch(DATA_FILE_PATH);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status} - Could not load ${DATA_FILE_PATH}`);
+                }
+                journalsData = await response.json();
+
+                // Basic data validation (check if it's an array)
+                if (!Array.isArray(journalsData)) {
+                     throw new Error('Data loaded is not an array. Please check the JSON file format.');
+                }
+
+                 // Display data source info
+                dataSourceInfo.textContent = `Data Source: ${DATA_FILE_PATH}`;
+
+                filteredData = [...journalsData]; // Initialize filtered data
+
+                // Populate dropdown menus with unique values from the data
+                populateDropdowns();
+
+                // Initial display
+                updateResults();
+
+                // Add event listeners
+                searchButton.addEventListener('click', searchJournals);
+                resetButton.addEventListener('click', resetFilters);
+
+                // Add event listener for table header clicks (sorting) using event delegation
+                resultsContainer.addEventListener('click', handleTableClick);
+
+                loadingDiv.style.display = 'none';
+
+            } catch (error) {
+                console.error('Initialization failed:', error);
+                loadingDiv.textContent = `加载数据失败: ${error.message}`;
+                resultsContainer.innerHTML = `<div class="no-results">无法加载或处理数据。请检查控制台获取详细信息。</div>`;
+            }
+        }
+
+        // --- Dropdown Population ---
+        function populateDropdowns() {
+            // Extract unique, non-empty, sorted values for each dropdown
+            const wosValues = getUniqueSortedValues(journalsData, 'Web of Science_x');
+            const categoryValues = getUniqueSortedValues(journalsData, '大类');
+            const categoryRankValues = getUniqueSortedValues(journalsData, '大类分区');
+            const subCategoryValues = getUniqueSortedValues(journalsData, '小类1');
+            const subCategoryRankValues = getUniqueSortedValues(journalsData, '小类1分区');
+            const countryValues = getUniqueSortedValues(journalsData, 'Country'); // New field
+
+            // Fill the corresponding select elements
+            fillDropdown(webOfScienceSelect, wosValues);
+            fillDropdown(categorySelect, categoryValues);
+            fillDropdown(categoryRankSelect, categoryRankValues);
+            fillDropdown(subCategorySelect, subCategoryValues);
+            fillDropdown(subCategoryRankSelect, subCategoryRankValues);
+            fillDropdown(countrySelect, countryValues); // New field
+        }
+
+        // Helper to get unique, sorted, non-empty string values from data for a specific key
+        function getUniqueSortedValues(data, key) {
+            // Use Set for uniqueness, filter out falsy values (null, undefined, ''), convert to string, sort
+             return [...new Set(data.map(item => item[key]).filter(Boolean))]
+                    .map(String) // Ensure all are strings for consistent sorting
+                    .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' })); // Natural sort
+        }
+
+        // Helper to fill a dropdown menu
+        function fillDropdown(selectElement, values) {
+            // Preserve the first option (e.g., "全部")
+            const firstOption = selectElement.options[0];
+            selectElement.innerHTML = ''; // Clear existing options (except the first)
+             if (firstOption) {
+                selectElement.appendChild(firstOption);
+            }
+
+            values.forEach(value => {
+                const option = document.createElement('option');
+                option.value = value;
+                option.textContent = value;
+                selectElement.appendChild(option);
+            });
+        }
+
+        // --- Filtering Logic ---
+        function searchJournals() {
+            // Get current values from all search fields
+            const journalTerm = journalInput.value.trim().toLowerCase();
+            const issnTerm = issnInput.value.trim().toLowerCase();
+            const openAccessValue = openAccessSelect.value;
+            const webOfScienceValue = webOfScienceSelect.value;
+            const categoryValue = categorySelect.value;
+            const categoryRankValue = categoryRankSelect.value;
+            const topValue = topSelect.value;
+            const subCategoryValue = subCategorySelect.value;
+            const subCategoryRankValue = subCategoryRankSelect.value;
+            const yearValue = yearInput.value.trim(); // New field
+            const countryValue = countrySelect.value; // New field
+
+            // Filter the original data
+            filteredData = journalsData.filter(item => {
+                // Helper function to safely get string value and convert to lower case
+                const safeStringLower = (value) => String(value || '').toLowerCase();
+
+                // Check each filter condition
+                const journalMatch = !journalTerm || safeStringLower(item['Journal_x']).includes(journalTerm);
+                const issnMatch = !issnTerm || safeStringLower(item['ISSN']).includes(issnTerm);
+                const oaMatch = !openAccessValue || item['Open Access'] === openAccessValue;
+                const wosMatch = !webOfScienceValue || item['Web of Science_x'] === webOfScienceValue;
+                const categoryMatch = !categoryValue || item['大类'] === categoryValue;
+                const categoryRankMatch = !categoryRankValue || String(item['大类分区'] || '') === categoryRankValue;
+                const topMatch = !topValue || item['Top'] === topValue;
+                const subCategoryMatch = !subCategoryValue || item['小类1'] === subCategoryValue;
+                const subCategoryRankMatch = !subCategoryRankValue || String(item['小类1分区'] || '') === subCategoryRankValue;
+                const yearMatch = !yearValue || String(item['年份'] || '') === yearValue; // New field - compare as strings
+                const countryMatch = !countryValue || item['Country'] === countryValue; // New field
+
+                // Item must match all active filters
+                return journalMatch && issnMatch && oaMatch && wosMatch && categoryMatch
+                      && categoryRankMatch && topMatch && subCategoryMatch && subCategoryRankMatch
+                      && yearMatch && countryMatch; // Added new fields
+            });
+
+            // Reset sort and pagination before displaying results
+            resetSort();
+            currentPage = 1;
+            updateResults();
+        }
+
+        // --- Reset Filters ---
+        function resetFilters() {
+            // Clear all input/select fields
+            journalInput.value = '';
+            issnInput.value = '';
+            openAccessSelect.value = '';
+            webOfScienceSelect.value = '';
+            categorySelect.value = '';
+            categoryRankSelect.value = '';
+            topSelect.value = '';
+            subCategorySelect.value = '';
+            subCategoryRankSelect.value = '';
+            yearInput.value = ''; // New field
+            countrySelect.value = ''; // New field
+
+            // Reset data and display
+            filteredData = [...journalsData];
+            resetSort();
+            currentPage = 1;
+            updateResults();
+        }
+
+         // --- Sorting Logic ---
+        function handleTableClick(event) {
+            // Check if the click was on a TH element with a data-column attribute
+             const header = event.target.closest('th[data-column]');
+             if (header) {
+                 const column = header.dataset.column;
+                 sortData(column);
+             }
+        }
+
+        function sortData(column) {
+            if (!column) return;
+
+            // Determine new sort direction
+            if (sortColumn === column) {
+                sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                sortColumn = column;
+                sortDirection = 'asc';
+            }
+
+            // Sort the filtered data
+            filteredData.sort((a, b) => {
+                let valA = a[column];
+                let valB = b[column];
+
+                // Handle potential null/undefined values - treat them as lowest
+                if (valA == null && valB == null) return 0;
+                if (valA == null) return sortDirection === 'asc' ? -1 : 1;
+                if (valB == null) return sortDirection === 'asc' ? 1 : -1;
+
+                // Specific handling for numeric columns (adjust keys if needed)
+                const numericColumns = ['大类分区', '小类1分区', '年份'];
+                if (numericColumns.includes(column)) {
+                    valA = parseFloat(valA);
+                    valB = parseFloat(valB);
+                     if (isNaN(valA) && isNaN(valB)) return 0;
+                     if (isNaN(valA)) return sortDirection === 'asc' ? -1 : 1;
+                     if (isNaN(valB)) return sortDirection === 'asc' ? 1 : -1;
+                    return sortDirection === 'asc' ? valA - valB : valB - valA;
+                }
+
+                // Default string comparison
+                valA = String(valA).toLowerCase();
+                valB = String(valB).toLowerCase();
+                return sortDirection === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+            });
+
+            // Reset to first page and update display
+            currentPage = 1;
+            updateResults();
+        }
+
+         function resetSort() {
+            sortColumn = null;
+            sortDirection = 'asc';
+            // Remove sorting classes from headers - done in updateResults
+        }
+
+
+        // --- Results Display ---
+        function updateResults() {
+            const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+            const endIndex = Math.min(startIndex + ITEMS_PER_PAGE, filteredData.length);
+            const pageData = filteredData.slice(startIndex, endIndex);
+
+            // Update information display
+            totalCountSpan.textContent = filteredData.length;
+            currentRangeSpan.textContent = filteredData.length > 0 ? `${startIndex + 1}-${endIndex}` : '0-0';
+
+            // Clear previous results
+            resultsContainer.innerHTML = '';
+
+            if (filteredData.length === 0) {
+                resultsContainer.innerHTML = '<div class="no-results">没有找到匹配的期刊</div>';
+                paginationContainer.innerHTML = ''; // Clear pagination if no results
+                return;
+            }
+
+            // Create table element
+            const table = document.createElement('table');
+            table.innerHTML = `
+                <thead>
+                    <tr>
+                        ${createHeaderCell('Journal_x', '期刊名称')}
+                        ${createHeaderCell('年份', '年份')}
+                        ${createHeaderCell('ISSN', 'ISSN')}
+                        ${createHeaderCell('Open Access', '开放获取')}
+                        ${createHeaderCell('Web of Science_x', 'Web of Science')}
+                        ${createHeaderCell('大类', '大类')}
+                        ${createHeaderCell('大类分区', '大类分区')}
+                        ${createHeaderCell('Top', 'Top')}
+                        ${createHeaderCell('小类1', '小类1')}
+                        ${createHeaderCell('小类1分区', '小类1分区')}
+                        ${createHeaderCell('Country', 'Country')}
+                        ${createHeaderCell('IF(2023)', 'IF(2023)')}
+                        ${createHeaderCell('IF Quartile(2023)', 'IF Quartile(2023)')}
+                    </tr>
+                </thead>
+                <tbody>
+                    ${pageData.map(journal => `
+                        <tr>
+                            <td>${journal['Journal_x'] || ''}</td>
+                            <td>${journal['年份'] || ''}</td>
+                            <td>${journal['ISSN'] || ''}</td>
+                            <td>${journal['Open Access'] || ''}</td>
+                            <td>${journal['Web of Science_x'] || ''}</td>
+                            <td>${journal['大类'] || ''}</td>
+                            <td>${journal['大类分区'] || ''}</td>
+                            <td>${journal['Top'] || ''}</td>
+                            <td>${journal['小类1'] || ''}</td>
+                            <td>${journal['小类1分区'] || ''}</td>
+                            <td>${journal['Country'] || ''}</td>
+                            <td>${journal['IF(2023)'] || ''}</td>
+                            <td>${journal['IF Quartile(2023)'] || ''}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            `;
+
+            resultsContainer.appendChild(table);
+
+            // Update pagination controls
+            updatePagination();
+        }
+
+        // Helper to create sortable table header cells
+        function createHeaderCell(columnKey, label) {
+             let sortClass = '';
+             if (sortColumn === columnKey) {
+                 sortClass = `class="sort-${sortDirection}"`;
+             }
+             // data-column attribute MUST match the key in the JSON data
+             return `<th data-column="${columnKey}" ${sortClass}>${label}<span class="sort-arrow"></span></th>`;
+        }
+
+        // --- Pagination ---
+        function updatePagination() {
+            const totalPages = Math.ceil(filteredData.length / ITEMS_PER_PAGE);
+            paginationContainer.innerHTML = ''; // Clear existing buttons
+
+            if (totalPages <= 1) return; // No pagination needed for 0 or 1 page
+
+            const maxDisplayedPages = 5; // Max number of page buttons to show (excluding prev/next)
+            let startPage, endPage;
+
+            if (totalPages <= maxDisplayedPages + 2) { // Show all pages if total is small enough
+                startPage = 1;
+                endPage = totalPages;
+            } else {
+                // Calculate start/end pages with ellipsis logic
+                 const maxPagesBeforeCurrent = Math.floor(maxDisplayedPages / 2);
+                 const maxPagesAfterCurrent = Math.ceil(maxDisplayedPages / 2) - 1;
+
+                if (currentPage <= maxPagesBeforeCurrent + 1) {
+                    startPage = 1;
+                    endPage = maxDisplayedPages;
+                } else if (currentPage + maxPagesAfterCurrent >= totalPages) {
+                    startPage = totalPages - maxDisplayedPages + 1;
+                    endPage = totalPages;
+                } else {
+                    startPage = currentPage - maxPagesBeforeCurrent;
+                    endPage = currentPage + maxPagesAfterCurrent;
+                }
+            }
+
+             // "Previous" button
+             if (currentPage > 1) {
+                 addPageButton('上一页', currentPage - 1);
+             }
+
+             // First page and ellipsis
+             if (startPage > 1) {
+                 addPageButton('1', 1);
+                 if (startPage > 2) {
+                    addEllipsis();
+                 }
+             }
+
+             // Page number buttons
+             for (let i = startPage; i <= endPage; i++) {
+                 addPageButton(String(i), i, i === currentPage);
+             }
+
+             // Last page and ellipsis
+             if (endPage < totalPages) {
+                 if (endPage < totalPages - 1) {
+                     addEllipsis();
+                 }
+                 addPageButton(String(totalPages), totalPages);
+             }
+
+             // "Next" button
+             if (currentPage < totalPages) {
+                 addPageButton('下一页', currentPage + 1);
+             }
+        }
+
+        // Helper to add a pagination button
+        function addPageButton(text, pageNum, isCurrent = false) {
+            const button = document.createElement('button');
+            button.textContent = text;
+            button.setAttribute('aria-label', text === String(pageNum) ? `Go to page ${pageNum}` : text);
+            if (isCurrent) {
+                button.classList.add('current-page');
+                button.setAttribute('aria-current', 'page');
+            }
+            button.addEventListener('click', () => {
+                if (currentPage !== pageNum) {
+                    currentPage = pageNum;
+                    updateResults();
+                    // Scroll to top of results for better UX
+                    resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+            paginationContainer.appendChild(button);
+        }
+
+        // Helper to add ellipsis (...) to pagination
+        function addEllipsis() {
+            const span = document.createElement('span');
+            span.textContent = '...';
+            span.setAttribute('aria-hidden', 'true');
+            paginationContainer.appendChild(span);
+        }
+
+
+        // --- Run Initialization on DOMContentLoaded ---
+        window.addEventListener('DOMContentLoaded', init);
+
+    </script>
+</body>
+</html>
