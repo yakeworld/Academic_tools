@@ -466,7 +466,7 @@
                             <th data-column="小类1" class="${sortColumn === '小类1' ? 'sort-' + sortDirection : ''}">小类1<span class="sort-arrow">▼</span></th>
                             <th data-column="小类1分区" class="${sortColumn === '小类1分区' ? 'sort-' + sortDirection : ''}">小类1分区<span class="sort-arrow">▼</span></th>
                             <th data-column="Country" class="${sortColumn === 'Country' ? 'sort-' + sortDirection : ''}">国家/地区<span class="sort-arrow">▼</span></th>
-                            <th data-column="IF(2023)" class="${sortColumn === 'IF(2023)' ? 'sort-' + sortDirection : ''}">影响因子(2023)<span class="sort-arrow">▼</span></th>
+                            <th data-column=" IF(2023)" class="${sortColumn === ' IF(2023)' ? 'sort-' + sortDirection : ''}">影响因子(2023)<span class="sort-arrow">▼</span></th>
                             <th data-column="IF Quartile(2023)" class="${sortColumn === 'IF Quartile(2023)' ? 'sort-' + sortDirection : ''}">IF Quartile(2023)<span class="sort-arrow">▼</span></th>
                         </tr>
                     </thead>
@@ -488,7 +488,7 @@
                         <td>${journal['小类1'] || ''}</td>
                         <td>${journal['小类1分区'] || ''}</td>
                         <td>${journal['Country'] || ''}</td>
-                        <td>${journal['IF(2023)'] || ''}</td>
+                        <td>${journal[' IF(2023)'] || ''}</td>
                         <td>${journal['IF Quartile(2023)'] || ''}</td>
                     </tr>
                 `;
