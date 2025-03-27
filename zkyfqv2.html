@@ -175,6 +175,16 @@
             color: white;
             font-size: 12px;
         }
+        .sample-data {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #f5f5f5;
+            border-radius: 4px;
+            font-size: 12px;
+            overflow: auto;
+            max-height: 100px;
+            text-align: left;
+        }
         @media (max-width: 768px) {
             .search-row {
                 flex-direction: column;
@@ -226,6 +236,11 @@
         
         <div class="progress-bar" id="progressBarContainer" style="display:none;">
             <div class="progress" id="progressBar">0%</div>
+        </div>
+        
+        <div id="sampleData" class="sample-data" style="display:none;">
+            <p>数据示例:</p>
+            <pre id="sampleDataContent"></pre>
         </div>
     </div>
     
@@ -317,6 +332,21 @@
         let currentPage = 1;
         let dataLoaded = false;
         
+        // 预加载测试数据
+        const sampleData = [
+            {
+                "Journal": "20 Et 21-Revue D Histoire",
+                "ISSN": "2649-664X",
+                "Open Access": "否",
+                "Web of Science": "AHCI",
+                "大类": "历史学",
+                "大类分区": 4,
+                "Top": "否",
+                "小类1": " HISTORY 历史学",
+                "小类1分区": 4
+            }
+        ];
+        
         // 初始化函数
         function init() {
             // 监听事件
@@ -331,6 +361,16 @@
                         (this.value === 'local') ? 'block' : 'none';
                 });
             });
+            
+            // 方便测试：添加直接使用示例数据的选项
+            const fileOptions = document.querySelector('.file-options');
+            const testOption = document.createElement('div');
+            testOption.className = 'file-option';
+            testOption.innerHTML = `
+                <input type="radio" id="fileOptionTest" name="fileOption" value="test">
+                <label for="fileOptionTest">使用测试数据（立即可用）</label>
+            `;
+            fileOptions.appendChild(testOption);
         }
         
         // 加载数据
@@ -339,6 +379,7 @@
             const progressBarContainer = document.getElementById('progressBarContainer');
             const progressBar = document.getElementById('progressBar');
             const resultsContainer = document.getElementById('results-container');
+            const sampleDataContainer = document.getElementById('sampleData');
             
             progressBarContainer.style.display = 'block';
             progressBar.style.width = '0%';
@@ -349,109 +390,123 @@
             try {
                 let data;
                 
-                switch (fileOption) {
-                    case 'json':
-                        // 普通JSON文件
-                        updateProgress(10);
-                        const response = await fetch('journals.json');
-                        if (!response.ok) {
-                            throw new Error('无法加载期刊数据');
-                        }
-                        updateProgress(50);
-                        data = await response.json();
-                        updateProgress(100);
-                        break;
-                        
-                    case 'gzip':
-                        // GZIP压缩文件 (服务器需要配置正确的Content-Encoding)
-                        updateProgress(10);
-                        const gzipResponse = await fetch('journals.json.gz');
-                        if (!gzipResponse.ok) {
-                            throw new Error('无法加载GZIP压缩数据');
-                        }
-                        updateProgress(50);
-                        // 服务器应自动解压，直接解析JSON
-                        data = await gzipResponse.json();
-                        updateProgress(100);
-                        break;
-                        
-                    case 'zip':
-                        // ZIP压缩文件
-                        updateProgress(10);
-                        const zipResponse = await fetch('journals.zip');
-                        if (!zipResponse.ok) {
-                            throw new Error('无法加载ZIP压缩数据');
-                        }
-                        updateProgress(30);
-                        const zipArrayBuffer = await zipResponse.arrayBuffer();
-                        updateProgress(50);
-                        
-                        // 使用JSZip解压
-                        const zip = new JSZip();
-                        const loadedZip = await zip.loadAsync(zipArrayBuffer);
-                        updateProgress(70);
-                        
-                        // 假设ZIP文件中包含journals.json
-                        const jsonFile = loadedZip.file('journals.json');
-                        if (!jsonFile) {
-                            throw new Error('ZIP文件中找不到journals.json');
-                        }
-                        
-                        const jsonText = await jsonFile.async('string');
-                        updateProgress(90);
-                        data = JSON.parse(jsonText);
-                        updateProgress(100);
-                        break;
-                        
-                    case 'local':
-                        // 本地文件上传
-                        const fileInput = document.getElementById('fileInput');
-                        if (!fileInput.files || fileInput.files.length === 0) {
-                            throw new Error('请选择文件');
-                        }
-                        
-                        const file = fileInput.files[0];
-                        updateProgress(20);
-                        
-                        if (file.name.endsWith('.json')) {
-                            // JSON文件
-                            const text = await readFileAsText(file, updateProgress);
-                            data = JSON.parse(text);
-                        } else if (file.name.endsWith('.zip')) {
-                            // ZIP文件
-                            const arrayBuffer = await readFileAsArrayBuffer(file, updateProgress);
+                if (fileOption === 'test') {
+                    // 使用示例数据
+                    updateProgress(50);
+                    data = sampleData;
+                    updateProgress(100);
+                } else {
+                    switch (fileOption) {
+                        case 'json':
+                            // 普通JSON文件
+                            updateProgress(10);
+                            const response = await fetch('journals.json');
+                            if (!response.ok) {
+                                throw new Error('无法加载期刊数据');
+                            }
+                            updateProgress(50);
+                            data = await response.json();
+                            updateProgress(100);
+                            break;
+                            
+                        case 'gzip':
+                            // GZIP压缩文件 (服务器需要配置正确的Content-Encoding)
+                            updateProgress(10);
+                            const gzipResponse = await fetch('journals.json.gz');
+                            if (!gzipResponse.ok) {
+                                throw new Error('无法加载GZIP压缩数据');
+                            }
+                            updateProgress(50);
+                            // 服务器应自动解压，直接解析JSON
+                            data = await gzipResponse.json();
+                            updateProgress(100);
+                            break;
+                            
+                        case 'zip':
+                            // ZIP压缩文件
+                            updateProgress(10);
+                            const zipResponse = await fetch('journals.zip');
+                            if (!zipResponse.ok) {
+                                throw new Error('无法加载ZIP压缩数据');
+                            }
+                            updateProgress(30);
+                            const zipArrayBuffer = await zipResponse.arrayBuffer();
+                            updateProgress(50);
+                            
+                            // 使用JSZip解压
                             const zip = new JSZip();
-                            const loadedZip = await zip.loadAsync(arrayBuffer);
+                            const loadedZip = await zip.loadAsync(zipArrayBuffer);
                             updateProgress(70);
                             
-                            // 找到第一个JSON文件
-                            let jsonFile = null;
-                            for (const filename in loadedZip.files) {
-                                if (filename.endsWith('.json')) {
-                                    jsonFile = loadedZip.file(filename);
-                                    break;
-                                }
-                            }
-                            
+                            // 假设ZIP文件中包含journals.json
+                            const jsonFile = loadedZip.file('journals.json');
                             if (!jsonFile) {
-                                throw new Error('ZIP文件中找不到JSON文件');
+                                throw new Error('ZIP文件中找不到journals.json');
                             }
                             
                             const jsonText = await jsonFile.async('string');
                             updateProgress(90);
                             data = JSON.parse(jsonText);
-                        } else if (file.name.endsWith('.gz')) {
-                            throw new Error('暂不支持直接读取.gz文件，请使用.zip格式或解压后上传');
-                        } else {
-                            throw new Error('不支持的文件格式');
-                        }
-                        updateProgress(100);
-                        break;
+                            updateProgress(100);
+                            break;
+                            
+                        case 'local':
+                            // 本地文件上传
+                            const fileInput = document.getElementById('fileInput');
+                            if (!fileInput.files || fileInput.files.length === 0) {
+                                throw new Error('请选择文件');
+                            }
+                            
+                            const file = fileInput.files[0];
+                            updateProgress(20);
+                            
+                            if (file.name.endsWith('.json')) {
+                                // JSON文件
+                                const text = await readFileAsText(file, updateProgress);
+                                data = JSON.parse(text);
+                            } else if (file.name.endsWith('.zip')) {
+                                // ZIP文件
+                                const arrayBuffer = await readFileAsArrayBuffer(file, updateProgress);
+                                const zip = new JSZip();
+                                const loadedZip = await zip.loadAsync(arrayBuffer);
+                                updateProgress(70);
+                                
+                                // 找到第一个JSON文件
+                                let jsonFile = null;
+                                for (const filename in loadedZip.files) {
+                                    if (filename.endsWith('.json')) {
+                                        jsonFile = loadedZip.file(filename);
+                                        break;
+                                    }
+                                }
+                                
+                                if (!jsonFile) {
+                                    throw new Error('ZIP文件中找不到JSON文件');
+                                }
+                                
+                                const jsonText = await jsonFile.async('string');
+                                updateProgress(90);
+                                data = JSON.parse(jsonText);
+                            } else if (file.name.endsWith('.gz')) {
+                                throw new Error('暂不支持直接读取.gz文件，请使用.zip格式或解压后上传');
+                            } else {
+                                throw new Error('不支持的文件格式');
+                            }
+                            updateProgress(100);
+                            break;
+                    }
                 }
                 
                 journalsData = data;
                 filteredData = [...journalsData];
                 dataLoaded = true;
+                
+                // 显示数据示例
+                if (journalsData.length > 0) {
+                    sampleDataContainer.style.display = 'block';
+                    document.getElementById('sampleDataContent').textContent = 
+                        JSON.stringify(journalsData[0], null, 2);
+                }
                 
                 // 填充下拉菜单选项
                 populateDropdowns();
@@ -520,16 +575,16 @@
             const categoryValues = [...new Set(journalsData.map(item => item['大类']).filter(Boolean))];
             fillDropdown('category', categoryValues);
             
-            // 大类分区选项
-            const categoryRankValues = [...new Set(journalsData.map(item => item['大类分区']).filter(Boolean))];
+            // 大类分区选项 - 可能是数值类型
+            const categoryRankValues = [...new Set(journalsData.map(item => item['大类分区']).filter(value => value !== null && value !== undefined))];
             fillDropdown('categoryRank', categoryRankValues);
             
             // 小类1选项
             const subCategoryValues = [...new Set(journalsData.map(item => item['小类1']).filter(Boolean))];
             fillDropdown('subCategory', subCategoryValues);
             
-            // 小类1分区选项
-            const subCategoryRankValues = [...new Set(journalsData.map(item => item['小类1分区']).filter(Boolean))];
+            // 小类1分区选项 - 可能是数值类型
+            const subCategoryRankValues = [...new Set(journalsData.map(item => item['小类1分区']).filter(value => value !== null && value !== undefined))];
             fillDropdown('subCategoryRank', subCategoryRankValues);
         }
         
@@ -540,11 +595,19 @@
             dropdown.innerHTML = '';
             dropdown.appendChild(defaultOption);
             
-            values.sort().forEach(value => {
-                if (value) {
+            // 确保值被转换为字符串，并进行排序（数值排序）
+            values.sort((a, b) => {
+                // 如果都是数字，按数值排序
+                if (!isNaN(a) && !isNaN(b)) {
+                    return Number(a) - Number(b);
+                }
+                // 否则按字符串排序
+                return String(a).localeCompare(String(b));
+            }).forEach(value => {
+                if (value !== null && value !== undefined) {
                     const option = document.createElement('option');
-                    option.value = value;
-                    option.textContent = value;
+                    option.value = String(value); // 将值转换为字符串
+                    option.textContent = String(value);
                     dropdown.appendChild(option);
                 }
             });
@@ -573,10 +636,19 @@
                 const oaMatch = openAccess === '' || item['Open Access'] === openAccess;
                 const wosMatch = webOfScience === '' || item['Web of Science'] === webOfScience;
                 const categoryMatch = category === '' || item['大类'] === category;
-                const categoryRankMatch = categoryRank === '' || item['大类分区'] === categoryRank;
+                
+                // 处理可能的数值类型
+                const categoryRankMatch = categoryRank === '' || 
+                    (item['大类分区'] !== null && item['大类分区'] !== undefined && 
+                     String(item['大类分区']) === categoryRank);
+                
                 const topMatch = top === '' || item['Top'] === top;
                 const subCategoryMatch = subCategory === '' || item['小类1'] === subCategory;
-                const subCategoryRankMatch = subCategoryRank === '' || item['小类1分区'] === subCategoryRank;
+                
+                // 处理可能的数值类型
+                const subCategoryRankMatch = subCategoryRank === '' || 
+                    (item['小类1分区'] !== null && item['小类1分区'] !== undefined && 
+                     String(item['小类1分区']) === subCategoryRank);
                 
                 return journalMatch && issnMatch && oaMatch && wosMatch && categoryMatch 
                       && categoryRankMatch && topMatch && subCategoryMatch && subCategoryRankMatch;
@@ -654,10 +726,10 @@
                         <td>${journal['Open Access'] || ''}</td>
                         <td>${journal['Web of Science'] || ''}</td>
                         <td>${journal['大类'] || ''}</td>
-                        <td>${journal['大类分区'] || ''}</td>
+                        <td>${journal['大类分区'] !== null && journal['大类分区'] !== undefined ? journal['大类分区'] : ''}</td>
                         <td>${journal['Top'] || ''}</td>
                         <td>${journal['小类1'] || ''}</td>
-                        <td>${journal['小类1分区'] || ''}</td>
+                        <td>${journal['小类1分区'] !== null && journal['小类1分区'] !== undefined ? journal['小类1分区'] : ''}</td>
                     </tr>
                 `;
             });
