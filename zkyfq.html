@@ -265,27 +265,27 @@
         }
         
         // 填充下拉菜单
-        function populateDropdowns() {
-            // Web of Science 选项
-            const wosValues = [...new Set(journalsData.map(item => item['Web of Science']).filter(Boolean))];
-            fillDropdown('webOfScience', wosValues);
-            
-            // 大类选项
-            const categoryValues = [...new Set(journalsData.map(item => item['大类']).filter(Boolean))];
-            fillDropdown('category', categoryValues);
-            
-            // 大类分区选项
-            const categoryRankValues = [...new Set(journalsData.map(item => item['大类分区']).filter(Boolean))];
-            fillDropdown('categoryRank', categoryRankValues);
-            
-            // 小类1选项
-            const subCategoryValues = [...new Set(journalsData.map(item => item['小类1']).filter(Boolean))];
-            fillDropdown('subCategory', subCategoryValues);
-            
-            // 小类1分区选项
-            const subCategoryRankValues = [...new Set(journalsData.map(item => item['小类1分区']).filter(Boolean))];
-            fillDropdown('subCategoryRank', subCategoryRankValues);
-        }
+		function populateDropdowns() {
+			// Web of Science 选项
+			const wosValues = [...new Set(journalsData.map(item => item['Web of Science']).filter(Boolean))];
+			fillDropdown('webOfScience', wosValues);
+			
+			// 大类选项
+			const categoryValues = [...new Set(journalsData.map(item => item['大类']).filter(Boolean))];
+			fillDropdown('category', categoryValues);
+			
+			// 大类分区选项（转为字符串）
+			const categoryRankValues = [...new Set(journalsData.map(item => String(item['大类分区'])).filter(Boolean)];
+			fillDropdown('categoryRank', categoryRankValues);
+			
+			// 小类1选项
+			const subCategoryValues = [...new Set(journalsData.map(item => item['小类1']).filter(Boolean))];
+			fillDropdown('subCategory', subCategoryValues);
+			
+			// 小类1分区选项（转为字符串）
+			const subCategoryRankValues = [...new Set(journalsData.map(item => String(item['小类1分区'])).filter(Boolean)];
+			fillDropdown('subCategoryRank', subCategoryRankValues);
+		}
         
         // 填充下拉菜单的辅助函数
         function fillDropdown(elementId, values) {
@@ -316,24 +316,18 @@
             const subCategory = document.getElementById('subCategory').value;
             const subCategoryRank = document.getElementById('subCategoryRank').value;
             
-            filteredData = journalsData.filter(item => {
-                const journalMatch = item.Journal && item.Journal.toLowerCase().includes(journal);
-                const issnMatch = item.ISSN && item.ISSN.toLowerCase().includes(issn);
-                const oaMatch = openAccess === '' || item['Open Access'] === openAccess;
-                const wosMatch = webOfScience === '' || item['Web of Science'] === webOfScience;
-                const categoryMatch = category === '' || item['大类'] === category;
-                const categoryRankMatch = categoryRank === '' || item['大类分区'] === categoryRank;
-                const topMatch = top === '' || item['Top'] === top;
-                const subCategoryMatch = subCategory === '' || item['小类1'] === subCategory;
-                const subCategoryRankMatch = subCategoryRank === '' || item['小类1分区'] === subCategoryRank;
-                
-                return journalMatch && issnMatch && oaMatch && wosMatch && categoryMatch 
-                      && categoryRankMatch && topMatch && subCategoryMatch && subCategoryRankMatch;
-            });
-            
-            currentPage = 1;
-            updateResults();
-        }
+			filteredData = journalsData.filter(item => {
+				// ...其他匹配条件不变...
+				const categoryRankMatch = categoryRank === '' || String(item['大类分区']) === categoryRank;
+				const subCategoryRankMatch = subCategoryRank === '' || String(item['小类1分区']) === subCategoryRank;
+				
+				return journalMatch && issnMatch && oaMatch && wosMatch && categoryMatch 
+					  && categoryRankMatch && topMatch && subCategoryMatch && subCategoryRankMatch;
+			});
+					
+					currentPage = 1;
+					updateResults();
+				}
         
         // 重置过滤器
         function resetFilters() {
