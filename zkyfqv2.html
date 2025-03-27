@@ -4,8 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>期刊数据查询系统</title>
-    <!-- 添加JSZip库 -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
         * {
             box-sizing: border-box;
@@ -93,6 +91,8 @@
             color: white;
             position: sticky;
             top: 0;
+            cursor: pointer;
+            user-select: none;
         }
         tr:hover {
             background-color: #f5f5f5;
@@ -133,57 +133,16 @@
             border-radius: 8px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
-        .file-input-container {
-            margin-bottom: 20px;
-            text-align: center;
-            padding: 15px;
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        .sort-arrow {
+            display: inline-block;
+            margin-left: 5px;
+            transition: transform 0.3s;
         }
-        .file-input-container p {
-            margin-bottom: 10px;
-            font-weight: bold;
+        .sort-asc .sort-arrow {
+            transform: rotate(180deg);
         }
-        .file-options {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            margin-bottom: 15px;
-        }
-        .file-option {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-        .progress-bar {
-            width: 100%;
-            background-color: #e0e0e0;
-            border-radius: 4px;
-            margin-top: 10px;
-            overflow: hidden;
-            height: 20px;
-        }
-        .progress {
-            height: 100%;
-            background-color: #4285f4;
-            width: 0%;
-            transition: width 0.3s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 12px;
-        }
-        .sample-data {
-            margin-top: 15px;
-            padding: 10px;
-            background-color: #f5f5f5;
-            border-radius: 4px;
-            font-size: 12px;
-            overflow: auto;
-            max-height: 100px;
-            text-align: left;
+        .sort-desc .sort-arrow {
+            transform: rotate(0deg);
         }
         @media (max-width: 768px) {
             .search-row {
@@ -197,52 +156,11 @@
                 padding: 8px 10px;
                 font-size: 14px;
             }
-            .file-options {
-                flex-direction: column;
-                align-items: center;
-            }
         }
     </style>
 </head>
 <body>
     <h1>期刊数据查询系统</h1>
-
-    <div class="file-input-container">
-        <p>选择数据来源</p>
-        <div class="file-options">
-            <div class="file-option">
-                <input type="radio" id="fileOption1" name="fileOption" value="json" checked>
-                <label for="fileOption1">普通JSON文件 (journals.json)</label>
-            </div>
-            <div class="file-option">
-                <input type="radio" id="fileOption2" name="fileOption" value="gzip">
-                <label for="fileOption2">GZIP压缩 (journals.json.gz)</label>
-            </div>
-            <div class="file-option">
-                <input type="radio" id="fileOption3" name="fileOption" value="zip">
-                <label for="fileOption3">ZIP压缩 (journals.zip)</label>
-            </div>
-            <div class="file-option">
-                <input type="radio" id="fileOption4" name="fileOption" value="local">
-                <label for="fileOption4">本地文件上传</label>
-            </div>
-        </div>
-        
-        <div id="localFileInput" style="display:none; margin-top: 10px;">
-            <input type="file" id="fileInput" accept=".json,.zip,.gz">
-        </div>
-        
-        <button id="loadData">加载数据</button>
-        
-        <div class="progress-bar" id="progressBarContainer" style="display:none;">
-            <div class="progress" id="progressBar">0%</div>
-        </div>
-        
-        <div id="sampleData" class="sample-data" style="display:none;">
-            <p>数据示例:</p>
-            <pre id="sampleDataContent"></pre>
-        </div>
-    </div>
     
     <div class="search-container">
         <div class="search-row">
@@ -315,7 +233,7 @@
     </div>
     
     <div id="results-container" class="results-container">
-        <div class="loading">请选择数据来源并加载数据</div>
+        <div class="loading">加载中，请稍候...</div>
     </div>
     
     <div id="pagination" class="pagination"></div>
@@ -330,239 +248,35 @@
         let filteredData = [];
         const itemsPerPage = 10;
         let currentPage = 1;
-        let dataLoaded = false;
-        
-        // 预加载测试数据
-        const sampleData = [
-            {
-                "Journal": "20 Et 21-Revue D Histoire",
-                "ISSN": "2649-664X",
-                "Open Access": "否",
-                "Web of Science": "AHCI",
-                "大类": "历史学",
-                "大类分区": 4,
-                "Top": "否",
-                "小类1": " HISTORY 历史学",
-                "小类1分区": 4
-            }
-        ];
+        let sortColumn = null;
+        let sortDirection = 'asc';
         
         // 初始化函数
-        function init() {
-            // 监听事件
-            document.getElementById('loadData').addEventListener('click', loadData);
-            document.getElementById('search').addEventListener('click', searchJournals);
-            document.getElementById('reset').addEventListener('click', resetFilters);
-            
-            // 文件选项变更时的处理
-            document.querySelectorAll('input[name="fileOption"]').forEach(radio => {
-                radio.addEventListener('change', function() {
-                    document.getElementById('localFileInput').style.display = 
-                        (this.value === 'local') ? 'block' : 'none';
-                });
-            });
-            
-            // 方便测试：添加直接使用示例数据的选项
-            const fileOptions = document.querySelector('.file-options');
-            const testOption = document.createElement('div');
-            testOption.className = 'file-option';
-            testOption.innerHTML = `
-                <input type="radio" id="fileOptionTest" name="fileOption" value="test">
-                <label for="fileOptionTest">使用测试数据（立即可用）</label>
-            `;
-            fileOptions.appendChild(testOption);
-        }
-        
-        // 加载数据
-        async function loadData() {
-            const fileOption = document.querySelector('input[name="fileOption"]:checked').value;
-            const progressBarContainer = document.getElementById('progressBarContainer');
-            const progressBar = document.getElementById('progressBar');
-            const resultsContainer = document.getElementById('results-container');
-            const sampleDataContainer = document.getElementById('sampleData');
-            
-            progressBarContainer.style.display = 'block';
-            progressBar.style.width = '0%';
-            progressBar.textContent = '0%';
-            
-            resultsContainer.innerHTML = '<div class="loading">数据加载中，请稍候...</div>';
-            
+        async function init() {
             try {
-                let data;
-                
-                if (fileOption === 'test') {
-                    // 使用示例数据
-                    updateProgress(50);
-                    data = sampleData;
-                    updateProgress(100);
-                } else {
-                    switch (fileOption) {
-                        case 'json':
-                            // 普通JSON文件
-                            updateProgress(10);
-                            const response = await fetch('journals.json');
-                            if (!response.ok) {
-                                throw new Error('无法加载期刊数据');
-                            }
-                            updateProgress(50);
-                            data = await response.json();
-                            updateProgress(100);
-                            break;
-                            
-                        case 'gzip':
-                            // GZIP压缩文件 (服务器需要配置正确的Content-Encoding)
-                            updateProgress(10);
-                            const gzipResponse = await fetch('journals.json.gz');
-                            if (!gzipResponse.ok) {
-                                throw new Error('无法加载GZIP压缩数据');
-                            }
-                            updateProgress(50);
-                            // 服务器应自动解压，直接解析JSON
-                            data = await gzipResponse.json();
-                            updateProgress(100);
-                            break;
-                            
-                        case 'zip':
-                            // ZIP压缩文件
-                            updateProgress(10);
-                            const zipResponse = await fetch('journals.zip');
-                            if (!zipResponse.ok) {
-                                throw new Error('无法加载ZIP压缩数据');
-                            }
-                            updateProgress(30);
-                            const zipArrayBuffer = await zipResponse.arrayBuffer();
-                            updateProgress(50);
-                            
-                            // 使用JSZip解压
-                            const zip = new JSZip();
-                            const loadedZip = await zip.loadAsync(zipArrayBuffer);
-                            updateProgress(70);
-                            
-                            // 假设ZIP文件中包含journals.json
-                            const jsonFile = loadedZip.file('journals.json');
-                            if (!jsonFile) {
-                                throw new Error('ZIP文件中找不到journals.json');
-                            }
-                            
-                            const jsonText = await jsonFile.async('string');
-                            updateProgress(90);
-                            data = JSON.parse(jsonText);
-                            updateProgress(100);
-                            break;
-                            
-                        case 'local':
-                            // 本地文件上传
-                            const fileInput = document.getElementById('fileInput');
-                            if (!fileInput.files || fileInput.files.length === 0) {
-                                throw new Error('请选择文件');
-                            }
-                            
-                            const file = fileInput.files[0];
-                            updateProgress(20);
-                            
-                            if (file.name.endsWith('.json')) {
-                                // JSON文件
-                                const text = await readFileAsText(file, updateProgress);
-                                data = JSON.parse(text);
-                            } else if (file.name.endsWith('.zip')) {
-                                // ZIP文件
-                                const arrayBuffer = await readFileAsArrayBuffer(file, updateProgress);
-                                const zip = new JSZip();
-                                const loadedZip = await zip.loadAsync(arrayBuffer);
-                                updateProgress(70);
-                                
-                                // 找到第一个JSON文件
-                                let jsonFile = null;
-                                for (const filename in loadedZip.files) {
-                                    if (filename.endsWith('.json')) {
-                                        jsonFile = loadedZip.file(filename);
-                                        break;
-                                    }
-                                }
-                                
-                                if (!jsonFile) {
-                                    throw new Error('ZIP文件中找不到JSON文件');
-                                }
-                                
-                                const jsonText = await jsonFile.async('string');
-                                updateProgress(90);
-                                data = JSON.parse(jsonText);
-                            } else if (file.name.endsWith('.gz')) {
-                                throw new Error('暂不支持直接读取.gz文件，请使用.zip格式或解压后上传');
-                            } else {
-                                throw new Error('不支持的文件格式');
-                            }
-                            updateProgress(100);
-                            break;
-                    }
+                // 加载JSON数据
+                const response = await fetch('journals.json');
+                if (!response.ok) {
+                    throw new Error('无法加载期刊数据');
                 }
-                
-                journalsData = data;
+                journalsData = await response.json();
                 filteredData = [...journalsData];
-                dataLoaded = true;
-                
-                // 显示数据示例
-                if (journalsData.length > 0) {
-                    sampleDataContainer.style.display = 'block';
-                    document.getElementById('sampleDataContent').textContent = 
-                        JSON.stringify(journalsData[0], null, 2);
-                }
                 
                 // 填充下拉菜单选项
                 populateDropdowns();
                 
                 // 显示初始数据
-                currentPage = 1;
                 updateResults();
                 
+                // 监听事件
+                document.getElementById('search').addEventListener('click', searchJournals);
+                document.getElementById('reset').addEventListener('click', resetFilters);
+                
+                // 移除加载状态
+                document.querySelector('.loading').style.display = 'none';
             } catch (error) {
-                console.error('加载数据失败:', error);
-                resultsContainer.innerHTML = `<div class="no-results">加载数据失败: ${error.message}</div>`;
-                progressBar.style.backgroundColor = '#f44336';
+                document.querySelector('.loading').textContent = '加载数据失败: ' + error.message;
             }
-        }
-        
-        // 读取文件为文本
-        function readFileAsText(file, progressCallback) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                
-                reader.onload = event => resolve(event.target.result);
-                reader.onerror = error => reject(error);
-                reader.onprogress = event => {
-                    if (event.lengthComputable) {
-                        const progress = Math.round((event.loaded / event.total) * 50) + 20;
-                        progressCallback(progress);
-                    }
-                };
-                
-                reader.readAsText(file);
-            });
-        }
-        
-        // 读取文件为ArrayBuffer
-        function readFileAsArrayBuffer(file, progressCallback) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                
-                reader.onload = event => resolve(event.target.result);
-                reader.onerror = error => reject(error);
-                reader.onprogress = event => {
-                    if (event.lengthComputable) {
-                        const progress = Math.round((event.loaded / event.total) * 50) + 20;
-                        progressCallback(progress);
-                    }
-                };
-                
-                reader.readAsArrayBuffer(file);
-            });
-        }
-        
-        // 更新进度条
-        function updateProgress(percent) {
-            const progressBar = document.getElementById('progressBar');
-            progressBar.style.width = `${percent}%`;
-            progressBar.textContent = `${percent}%`;
         }
         
         // 填充下拉菜单
@@ -575,16 +289,16 @@
             const categoryValues = [...new Set(journalsData.map(item => item['大类']).filter(Boolean))];
             fillDropdown('category', categoryValues);
             
-            // 大类分区选项 - 可能是数值类型
-            const categoryRankValues = [...new Set(journalsData.map(item => item['大类分区']).filter(value => value !== null && value !== undefined))];
+            // 大类分区选项
+            const categoryRankValues = [...new Set(journalsData.map(item => String(item['大类分区'])).filter(Boolean))];
             fillDropdown('categoryRank', categoryRankValues);
             
             // 小类1选项
             const subCategoryValues = [...new Set(journalsData.map(item => item['小类1']).filter(Boolean))];
             fillDropdown('subCategory', subCategoryValues);
             
-            // 小类1分区选项 - 可能是数值类型
-            const subCategoryRankValues = [...new Set(journalsData.map(item => item['小类1分区']).filter(value => value !== null && value !== undefined))];
+            // 小类1分区选项
+            const subCategoryRankValues = [...new Set(journalsData.map(item => String(item['小类1分区'])).filter(Boolean))];
             fillDropdown('subCategoryRank', subCategoryRankValues);
         }
         
@@ -595,19 +309,11 @@
             dropdown.innerHTML = '';
             dropdown.appendChild(defaultOption);
             
-            // 确保值被转换为字符串，并进行排序（数值排序）
-            values.sort((a, b) => {
-                // 如果都是数字，按数值排序
-                if (!isNaN(a) && !isNaN(b)) {
-                    return Number(a) - Number(b);
-                }
-                // 否则按字符串排序
-                return String(a).localeCompare(String(b));
-            }).forEach(value => {
-                if (value !== null && value !== undefined) {
+            values.sort().forEach(value => {
+                if (value) {
                     const option = document.createElement('option');
-                    option.value = String(value); // 将值转换为字符串
-                    option.textContent = String(value);
+                    option.value = value;
+                    option.textContent = value;
                     dropdown.appendChild(option);
                 }
             });
@@ -615,11 +321,6 @@
         
         // 搜索期刊
         function searchJournals() {
-            if (!dataLoaded) {
-                alert('请先加载数据');
-                return;
-            }
-            
             const journal = document.getElementById('journal').value.toLowerCase();
             const issn = document.getElementById('issn').value.toLowerCase();
             const openAccess = document.getElementById('openAccess').value;
@@ -631,40 +332,29 @@
             const subCategoryRank = document.getElementById('subCategoryRank').value;
             
             filteredData = journalsData.filter(item => {
-                const journalMatch = !journal || (item.Journal && item.Journal.toLowerCase().includes(journal));
-                const issnMatch = !issn || (item.ISSN && item.ISSN.toLowerCase().includes(issn));
+                const journalMatch = item.Journal && item.Journal.toLowerCase().includes(journal);
+                const issnMatch = item.ISSN && item.ISSN.toLowerCase().includes(issn);
                 const oaMatch = openAccess === '' || item['Open Access'] === openAccess;
                 const wosMatch = webOfScience === '' || item['Web of Science'] === webOfScience;
                 const categoryMatch = category === '' || item['大类'] === category;
-                
-                // 处理可能的数值类型
-                const categoryRankMatch = categoryRank === '' || 
-                    (item['大类分区'] !== null && item['大类分区'] !== undefined && 
-                     String(item['大类分区']) === categoryRank);
-                
+                const categoryRankMatch = categoryRank === '' || String(item['大类分区']) === categoryRank;
                 const topMatch = top === '' || item['Top'] === top;
                 const subCategoryMatch = subCategory === '' || item['小类1'] === subCategory;
-                
-                // 处理可能的数值类型
-                const subCategoryRankMatch = subCategoryRank === '' || 
-                    (item['小类1分区'] !== null && item['小类1分区'] !== undefined && 
-                     String(item['小类1分区']) === subCategoryRank);
+                const subCategoryRankMatch = subCategoryRank === '' || String(item['小类1分区']) === subCategoryRank;
                 
                 return journalMatch && issnMatch && oaMatch && wosMatch && categoryMatch 
                       && categoryRankMatch && topMatch && subCategoryMatch && subCategoryRankMatch;
             });
             
+            // 重置排序和分页
+            sortColumn = null;
+            sortDirection = 'asc';
             currentPage = 1;
             updateResults();
         }
         
         // 重置过滤器
         function resetFilters() {
-            if (!dataLoaded) {
-                alert('请先加载数据');
-                return;
-            }
-            
             document.getElementById('journal').value = '';
             document.getElementById('issn').value = '';
             document.getElementById('openAccess').value = '';
@@ -676,6 +366,8 @@
             document.getElementById('subCategoryRank').value = '';
             
             filteredData = [...journalsData];
+            sortColumn = null;
+            sortDirection = 'asc';
             currentPage = 1;
             updateResults();
         }
@@ -702,15 +394,15 @@
                 <table>
                     <thead>
                         <tr>
-                            <th>期刊名称</th>
-                            <th>ISSN</th>
-                            <th>开放获取</th>
-                            <th>Web of Science</th>
-                            <th>大类</th>
-                            <th>大类分区</th>
-                            <th>Top</th>
-                            <th>小类1</th>
-                            <th>小类1分区</th>
+                            <th data-column="Journal" class="${sortColumn === 'Journal' ? 'sort-' + sortDirection : ''}">期刊名称<span class="sort-arrow">▼</span></th>
+                            <th data-column="ISSN" class="${sortColumn === 'ISSN' ? 'sort-' + sortDirection : ''}">ISSN<span class="sort-arrow">▼</span></th>
+                            <th data-column="Open Access" class="${sortColumn === 'Open Access' ? 'sort-' + sortDirection : ''}">开放获取<span class="sort-arrow">▼</span></th>
+                            <th data-column="Web of Science" class="${sortColumn === 'Web of Science' ? 'sort-' + sortDirection : ''}">Web of Science<span class="sort-arrow">▼</span></th>
+                            <th data-column="大类" class="${sortColumn === '大类' ? 'sort-' + sortDirection : ''}">大类<span class="sort-arrow">▼</span></th>
+                            <th data-column="大类分区" class="${sortColumn === '大类分区' ? 'sort-' + sortDirection : ''}">大类分区<span class="sort-arrow">▼</span></th>
+                            <th data-column="Top" class="${sortColumn === 'Top' ? 'sort-' + sortDirection : ''}">Top<span class="sort-arrow">▼</span></th>
+                            <th data-column="小类1" class="${sortColumn === '小类1' ? 'sort-' + sortDirection : ''}">小类1<span class="sort-arrow">▼</span></th>
+                            <th data-column="小类1分区" class="${sortColumn === '小类1分区' ? 'sort-' + sortDirection : ''}">小类1分区<span class="sort-arrow">▼</span></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -726,10 +418,10 @@
                         <td>${journal['Open Access'] || ''}</td>
                         <td>${journal['Web of Science'] || ''}</td>
                         <td>${journal['大类'] || ''}</td>
-                        <td>${journal['大类分区'] !== null && journal['大类分区'] !== undefined ? journal['大类分区'] : ''}</td>
+                        <td>${journal['大类分区'] || ''}</td>
                         <td>${journal['Top'] || ''}</td>
                         <td>${journal['小类1'] || ''}</td>
-                        <td>${journal['小类1分区'] !== null && journal['小类1分区'] !== undefined ? journal['小类1分区'] : ''}</td>
+                        <td>${journal['小类1分区'] || ''}</td>
                     </tr>
                 `;
             });
@@ -743,6 +435,34 @@
             
             // 更新分页
             updatePagination();
+        }
+        
+        // 排序数据
+        function sortData(column) {
+            if (sortColumn === column) {
+                sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                sortColumn = column;
+                sortDirection = 'asc';
+            }
+
+            filteredData.sort((a, b) => {
+                const valA = a[column];
+                const valB = b[column];
+                
+                // 处理数字类型排序
+                if (column === '大类分区' || column === '小类1分区') {
+                    return sortDirection === 'asc' ? valA - valB : valB - valA;
+                }
+                
+                // 处理字符串类型排序
+                const strA = String(valA || '').toLowerCase();
+                const strB = String(valB || '').toLowerCase();
+                return sortDirection === 'asc' ? strA.localeCompare(strB) : strB.localeCompare(strA);
+            });
+
+            currentPage = 1;
+            updateResults();
         }
         
         // 更新分页控件
@@ -818,7 +538,17 @@
         }
         
         // 页面加载时初始化
-        window.addEventListener('DOMContentLoaded', init);
+        window.addEventListener('DOMContentLoaded', () => {
+            init();
+            
+            // 表头点击事件委托
+            document.addEventListener('click', (e) => {
+                if (e.target.closest('th')) {
+                    const column = e.target.closest('th').dataset.column;
+                    sortData(column);
+                }
+            });
+        });
     </script>
 </body>
 </html>
