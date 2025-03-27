@@ -524,12 +524,33 @@
                 }
                 
                 // 处理影响因子排序
-                if (column === ' IF(2023)') {
-                    const numA = parseFloat((valA || '0').replace(/[^0-9.]/g, ''));
-                    const numB = parseFloat((valB || '0').replace(/[^0-9.]/g, ''));
+                // 处理影响因子排序 - 现在完全作为数字处理
+                if (column === 'IF(2023)') {
+                    // 处理特殊符号如"<0.1"的情况
+                    let numA = 0;
+                    if (valA) {
+                        if (valA.startsWith('<')) {
+                            numA = parseFloat(valA.substring(1)) - 0.0001; // 使<0.1排在0.1之前
+                        } else if (valA.startsWith('>')) {
+                            numA = parseFloat(valA.substring(1)) + 0.0001; // 使>5排在5之后
+                        } else {
+                            numA = parseFloat(valA) || 0;
+                        }
+                    }
+                    
+                    let numB = 0;
+                    if (valB) {
+                        if (valB.startsWith('<')) {
+                            numB = parseFloat(valB.substring(1)) - 0.0001;
+                        } else if (valB.startsWith('>')) {
+                            numB = parseFloat(valB.substring(1)) + 0.0001;
+                        } else {
+                            numB = parseFloat(valB) || 0;
+                        }
+                    }
+                    
                     return sortDirection === 'asc' ? numA - numB : numB - numA;
                 }
-                
                 // 处理IF Quartile排序
                 if (column === 'IF Quartile(2023)') {
                     const quartileOrder = {'Q1': 1, 'Q2': 2, 'Q3': 3, 'Q4': 4};
