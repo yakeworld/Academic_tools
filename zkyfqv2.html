@@ -384,7 +384,7 @@
                 // 处理影响因子筛选
                 let ifMatch = true;
                 if (impactFactor !== '') {
-                    const ifValue = item['IF(2023)'];
+                    const ifValue = item[' IF(2023)'];
                     if (ifValue) {
                         const numValue = parseFloat(ifValue.replace(/[^0-9.]/g, ''));
                         if (impactFactor === '<0.1' && numValue >= 0.1) ifMatch = false;
@@ -524,7 +524,7 @@
                 }
                 
                 // 处理影响因子排序
-                if (column === 'IF(2023)') {
+                if (column === ' IF(2023)') {
                     const numA = parseFloat((valA || '0').replace(/[^0-9.]/g, ''));
                     const numB = parseFloat((valB || '0').replace(/[^0-9.]/g, ''));
                     return sortDirection === 'asc' ? numA - numB : numB - numA;
