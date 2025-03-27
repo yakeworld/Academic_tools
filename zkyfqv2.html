@@ -414,7 +414,7 @@
                 tableHTML += `
                     <tr>
                         <td>${journal.Journal || ''}</td>
-                        <td>${journal.ISSN || ''}</td>
+                        <td><a href='https://doaj.org/toc/${journal.ISSN}'>${journal.ISSN}</a> || ''</td>
                         <td>${journal['Open Access'] || ''}</td>
                         <td>${journal['Web of Science'] || ''}</td>
                         <td>${journal['大类'] || ''}</td>
