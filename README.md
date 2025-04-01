@@ -2,7 +2,7 @@
 1. [Makrdown_academic](https://yakeworld.github.io/Academic_tools/Academic_bibtex.html)
    这是一个使用 CodeMirror 和 Tailwind CSS 构建的 Markdown 编辑器，它具备 BibTeX 引用支持。用户可以实时预览 Markdown 内容，并能通过简单的操作插入和管理学术引用。编辑器支持多种参考文献格式（APA、MLA、Chicago、Harvard、IEEE），支持自定义参考文献格式，并提供暗黑模式切换功能，旨在为需要撰写学术文档的用户提供便捷的体验。 
 
-3. [Literature_Search_mu](https://yakeworld.github.io/Academic_tools/Academic_bibtex.html)
+3. [Literature_Search_mu](https://yakeworld.github.io/Academic_tools/Academic_Search_mul.html)
 学术文献搜索器，专注学术文献快速检索，集成三大数据库，让科研人员更高效地找到所需资料。
 主要特点：
 多库集成： 同时搜索 PubMed, Semantic Scholar 和 arXiv，覆盖广泛的学术领域。
