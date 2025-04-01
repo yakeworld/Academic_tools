@@ -2095,18 +2095,18 @@ Please provide your response in the following format:
                             }
                         } else {
                             console.error('XMLHttpRequest failed with status:', xhr.status);
-                            simulateSearchResults(url, resolve, reject);
+                           
                         }
                     };
                     
                     xhr.onerror = function() {
                         console.error('XMLHttpRequest failed due to network error');
-                        simulateSearchResults(url, resolve, reject);
+                       
                     };
                     
                     xhr.ontimeout = function() {
                         console.error('XMLHttpRequest timed out');
-                        simulateSearchResults(url, resolve, reject);
+                        
                     };
                     
                     // Set a timeout
@@ -2117,7 +2117,7 @@ Please provide your response in the following format:
                     
                 } catch (err) {
                     console.error('Error in fetchDirectlyWithFallback:', err);
-                    simulateSearchResults(url, resolve, reject);
+                     
                 }
             }
             
@@ -2305,84 +2305,7 @@ Please provide your response in the following format:
                 };
             }
             
-            // When all direct methods fail, simulate a search by extracting parts of the URL
-            function simulateSearchResults(url, resolve, reject) {
-                console.log('All direct methods failed. Creating local search results.');
-                
-                // Extract query from URL
-                const queryMatch = url.match(/search_query=all:([^&]+)/);
-                const query = queryMatch ? decodeURIComponent(queryMatch[1]).replace(/\+/g, ' ') : 'unknown query';
-                
-                // Extract max results
-                const maxResultsMatch = url.match(/max_results=(\d+)/);
-                const maxResults = maxResultsMatch ? parseInt(maxResultsMatch[1], 10) : 10;
-                
-                // Simulate papers based on the query
-                const simulatedPapers = [];
-                
-                // Create a fixed set of academic papers based on the query
-                for (let i = 1; i <= maxResults; i++) {
-                    // Simulate both new-style and old-style IDs
-                    let id, arxiv_url, pdf_url;
-                    
-                    if (Math.random() > 0.2) {
-                        // Modern ID (80% chance)
-                        id = `2401.${(10000 + i).toString()}`;
-                        arxiv_url = `https://arxiv.org/abs/${id}`;
-                        pdf_url = `https://arxiv.org/pdf/${id}.pdf`;
-                    } else {
-                        // Old style ID with category (20% chance)
-                        const categories = ['physics', 'math', 'cs', 'astro-ph', 'cond-mat'];
-                        const category = categories[Math.floor(Math.random() * categories.length)];
-                        id = `${category}/0${(700000 + i).toString()}v1`;
-                        arxiv_url = `https://arxiv.org/abs/${id}`;
-                        pdf_url = `https://arxiv.org/pdf/${id}`; // No .pdf extension for old-style IDs
-                    }
-                    
-                    // Create a title based on the query
-                    const words = query.split(' ');
-                    const randomWord = words[Math.floor(Math.random() * words.length)];
-                    const title = `A Study of ${randomWord.charAt(0).toUpperCase() + randomWord.slice(1)} in Modern Research (${i})`;
-                    
-                    // Create random authors
-                    const authors = ['J. Smith', 'A. Johnson', 'M. Lee', 'S. Williams', 'K. Brown']
-                                    .sort(() => 0.5 - Math.random())
-                                    .slice(0, 2 + Math.floor(Math.random() * 3));
-                    
-                    // Create categories based on the query
-                    const allCategories = ['cs.AI', 'cs.LG', 'math.ST', 'stat.ML', 'physics.comp-ph', 'q-bio.QM'];
-                    const categories = allCategories
-                                      .sort(() => 0.5 - Math.random())
-                                      .slice(0, 1 + Math.floor(Math.random() * 3));
-                    
-                    // Generate a fake date
-                    const currentYear = new Date().getFullYear();
-                    const randomMonth = Math.floor(Math.random() * 12) + 1;
-                    const randomDay = Math.floor(Math.random() * 28) + 1;
-                    const publishedDate = `${currentYear}-${randomMonth.toString().padStart(2, '0')}-${randomDay.toString().padStart(2, '0')}`;
-                    
-                    // Generate a summary that includes the query
-                    const summary = `This paper explores advanced methods of ${query} analysis using modern techniques. We present a novel approach to solve problems in this domain and demonstrate its effectiveness through extensive experiments.`;
-                    
-                    simulatedPapers.push({
-                        id,
-                        title,
-                        authors,
-                        summary,
-                        published: formatArXivDate(publishedDate),
-                        updated: '',
-                        categories,
-                        doi: null,
-                        arxiv_url,
-                        pdf_url
-                    });
-                }
-                
-                resolve({
-                    totalResults: 100, // Simulate a larger corpus
-                    papers: simulatedPapers
-                });
-            }
+             
             
             // Direct search for arXiv using CORS proxy technique
             function directArXivSearch(query, maxResults, dateRange) {
@@ -3056,9 +2979,10 @@ Please provide your response in the following format:
                     resultCard.innerHTML = `
                         <h3 class="text-lg font-semibold text-primary mb-2">${paper.title || 'Untitled'}</h3>
                         <p class="text-sm mb-1"><span class="font-medium">Authors:</span> ${authors}</p>
-                        ${venueInfo}
+                        ${venueInfo} 
                         <p class="text-sm mb-1"><span class="font-medium">Year:</span> ${year}</p>
                         ${citationInfo}
+                        
                         <p class="text-sm mb-1"><span class="font-medium">Semantic Scholar ID:</span> ${paper.paperId || 'Unknown'}</p>
                         ${doiLink}
                         ${fieldsHtml}
@@ -3230,22 +3154,22 @@ Please provide your response in the following format:
                                     resolve(result);
                                 } catch (error) {
                                     console.error('Error processing Semantic Scholar response:', error);
-                                    simulateSemanticScholarResults(query, maxResults, reject);
+                              
                                 }
                             } else {
                                 console.error('Semantic Scholar API request failed with status:', xhr.status);
-                                simulateSemanticScholarResults(query, maxResults, resolve);
+                                
                             }
                         };
                         
                         xhr.onerror = function() {
                             console.error('Network error when connecting to Semantic Scholar API');
-                            simulateSemanticScholarResults(query, maxResults, resolve);
+                           
                         };
                         
                         xhr.ontimeout = function() {
                             console.error('Semantic Scholar API request timed out');
-                            simulateSemanticScholarResults(query, maxResults, resolve);
+                           
                         };
                         
                         // Set timeout
@@ -3256,7 +3180,7 @@ Please provide your response in the following format:
                         
                     } catch (err) {
                         console.error('Error in Semantic Scholar search:', err);
-                        simulateSemanticScholarResults(query, maxResults, resolve);
+                         
                     }
                 });
             }
@@ -3304,13 +3228,14 @@ Please provide your response in the following format:
                                 venueStr = paper.venue;
                             }
                         }
-                        const venue = paper.journal || venueStr || '';
+                        const venue = paper.journal.name || venueStr || '';
                         
                         // Create paper object
                         return {
                             paperId: paper.paperId || 'unknown',
                             title: paper.title || 'Untitled',
                             authors: authors,
+                            volume: paper.journal.volume,                            
                             year: year,
                             venue: venue,
                             abstract: paper.abstract || '',
@@ -3333,73 +3258,7 @@ Please provide your response in the following format:
                 }
             }
             
-            // Simulate Semantic Scholar results if API fails
-            function simulateSemanticScholarResults(query, maxResults, resolve) {
-                console.log('Simulating Semantic Scholar results for:', query);
-                
-                const simulatedPapers = [];
-                
-                // Generate simulated papers
-                for (let i = 1; i <= maxResults; i++) {
-                    const words = query.split(' ');
-                    const randomWord = words[Math.floor(Math.random() * words.length)];
-                    const title = `Analysis of ${randomWord.charAt(0).toUpperCase() + randomWord.slice(1)} in Research Context (${i})`;
-                    
-                    // Generate random authors
-                    const authors = ['A. Smith', 'B. Johnson', 'C. Williams', 'D. Brown', 'E. Jones', 'F. Miller']
-                        .sort(() => 0.5 - Math.random())
-                        .slice(0, 2 + Math.floor(Math.random() * 3));
-                    
-                    // Generate fields of study
-                    const allFields = ['Computer Science', 'Mathematics', 'Physics', 'Biology', 'Medicine', 'Economics', 'Psychology'];
-                    const fields = allFields
-                        .sort(() => 0.5 - Math.random())
-                        .slice(0, 1 + Math.floor(Math.random() * 3));
-                    
-                    // Generate a random year
-                    const currentYear = new Date().getFullYear();
-                    const year = currentYear - Math.floor(Math.random() * 10);
-                    
-                    // Generate a random venue/journal
-                    const venues = ['Journal of Research', 'International Conference on Science', 'Proceedings of the Academic Society', 'Science Review'];
-                    const venue = venues[Math.floor(Math.random() * venues.length)];
-                    
-                    // Generate a publication date (YYYY-MM-DD format)
-                    const month = Math.floor(Math.random() * 12) + 1;
-                    const day = Math.floor(Math.random() * 28) + 1;
-                    const publicationDate = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
-                    
-                    // Generate a fake abstract
-                    const abstract = `This paper explores the significance of ${query} in modern research. We present novel findings and methodologies that advance the understanding of this concept within the field of ${fields[0]}.`;
-                    
-                    // Generate a random citation count
-                    const citationCount = Math.floor(Math.random() * 200);
-                    
-                    // Create a simulated Semantic Scholar ID
-                    const paperId = `${(10000000 + i * 1234).toString()}`;
-                    
-                    simulatedPapers.push({
-                        paperId,
-                        title,
-                        authors,
-                        year,
-                        venue,
-                        journal: venue, // Add journal field matching the venue
-                        abstract,
-                        citationCount,
-                        fields,
-                        doi: `10.1234/semantic.${paperId}`,
-                        url: `${SEMANTIC_SCHOLAR_ARTICLE_URL}${paperId}`,
-                        pdfUrl: Math.random() > 0.5 ? `https://example.com/pdf/${paperId}.pdf` : null,
-                        publicationDate: publicationDate
-                    });
-                }
-                
-                resolve({
-                    totalResults: 100, // Simulate a larger corpus
-                    papers: simulatedPapers
-                });
-            }
+             
             
             // Generic function to search a specific database and return results
             async function searchDatabase(database, query, maxResults, dateRange) {
@@ -3664,6 +3523,7 @@ Please provide your response in the following format:
   author = {${authors}},
   title = {{${title}}},
   year = {${year}},
+  journal={arXiv},
   eprint = {${paper.id}},
   archivePrefix = {arXiv},`;
   
@@ -3840,11 +3700,17 @@ Please provide your response in the following format:
   author = {${authors}},
   title = {{${title}}},
   year = {${year}},`;
-  
+               
                 if (paper.venue) {
-                    bibtex += `\n  journal = {${paper.venue}},`;
+                    bibtex += `\n  journal = {${paper.venue}},`;                      
+                    
                 }
-                
+                if (paper.volume) {
+                    bibtex += `\n  volume = {${paper.volume}},`;                      
+                    
+                }
+      
+                                       
                 if (paper.doi) {
                     bibtex += `\n  doi = {${paper.doi}},`;
                 }
@@ -4887,6 +4753,35 @@ Please provide your response in the following format:
                 errorContainer.classList.add('hidden');
             }
         });
+        
+        function truncateText(text, maxLength) {
+            if (text.length <= maxLength) return text;
+            return text.substring(0, maxLength) + '...';
+        }
+        function escapeHTML(str) {
+            if (!str) return '';
+            // Make sure str is actually a string
+            str = String(str);
+            return str
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+                        
+
     </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
