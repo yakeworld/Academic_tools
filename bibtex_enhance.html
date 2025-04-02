@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BibTeX Enhancer with Semantic Scholar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#5D5CDE',
+                    }
+                }
+            },
+            darkMode: 'class',
+        }
+    </script>
+    <style>
+        /* Custom scrollbar for code areas */
+        textarea::-webkit-scrollbar, pre::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        textarea::-webkit-scrollbar-track, pre::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        .dark textarea::-webkit-scrollbar-track, .dark pre::-webkit-scrollbar-track {
+            background: #374151;
+        }
+        textarea::-webkit-scrollbar-thumb, pre::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+        textarea::-webkit-scrollbar-thumb:hover, pre::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+    </style>
+</head>
+<body class="bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 min-h-screen">
+    <!-- Check dark mode preference -->
+    <script>
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            if (event.matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        });
+    </script>
+
+    <div class="container mx-auto px-4 py-8 max-w-5xl">
+        <header class="mb-8 text-center">
+            <h1 class="text-3xl font-bold text-primary mb-2">BibTeX Enhancer</h1>
+            <p class="text-gray-600 dark:text-gray-400">Add DOIs and full-text links to your Semantic Scholar BibTeX entries</p>
+        </header>
+
+        <main>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Input Section -->
+                <div class="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg shadow-md">
+                    <h2 class="text-xl font-semibold mb-4">Input BibTeX</h2>
+                    
+                    <div class="mb-4">
+                        <label for="bibtexInput" class="block mb-2 text-sm font-medium">Paste your BibTeX entries:</label>
+                        <textarea 
+                            id="bibtexInput" 
+                            rows="10" 
+                            class="w-full p-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-base"
+                            placeholder="Paste your BibTeX entries here..."
+                        >@article{Dierkes2019AFA,
+title={A fast approach to refraction-aware eye-model fitting and gaze prediction},
+author={Kai Dierkes and Moritz Kassner and Andreas Bulling},
+journal={Proceedings of the 11th ACM Symposium on Eye Tracking Research & Applications},
+year={2019},
+url={https://api.semanticscholar.org/CorpusID:169040087}
+}</textarea>
+                    </div>
+                    
+                    <div class="flex flex-wrap gap-3">
+                        <button id="processBtn" class="bg-primary hover:bg-primary/90 text-white font-medium py-2 px-4 rounded-md">
+                            Enhance BibTeX
+                        </button>
+                        <button id="clearBtn" class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 font-medium py-2 px-4 rounded-md">
+                            Clear
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Output Section -->
+                <div class="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg shadow-md">
+                    <h2 class="text-xl font-semibold mb-4">Enhanced BibTeX</h2>
+                    
+                    <div id="loadingOutput" class="hidden p-4 text-center">
+                        <div class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+                        <p class="mt-2 text-gray-600 dark:text-gray-400">Fetching data from Semantic Scholar...</p>
+                    </div>
+                    
+                    <div id="errorOutput" class="hidden p-4 text-center text-red-500 dark:text-red-400">
+                        <p class="text-lg font-medium mb-2">Error</p>
+                        <p id="errorMessage">Something went wrong. Please try again.</p>
+                    </div>
+                    
+                    <div id="outputContent" class="hidden">
+                        <pre id="bibtexOutput" class="w-full p-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-mono overflow-auto max-h-[240px]"></pre>
+                        
+                        <div class="flex justify-between mt-4">
+                            <button id="copyBtn" class="bg-primary hover:bg-primary/90 text-white font-medium py-2 px-4 rounded-md flex items-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-2M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                                </svg>
+                                Copy
+                            </button>
+                            <div id="copyMessage" class="text-green-500 hidden">Copied!</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Paper Details Section -->
+            <div id="paperDetailsSection" class="mt-8 bg-gray-50 dark:bg-gray-800 p-6 rounded-lg shadow-md hidden">
+                <h2 class="text-xl font-semibold mb-4">Paper Details</h2>
+                <div id="paperDetails" class="space-y-4"></div>
+            </div>
+        </main>
+
+        <footer class="mt-12 text-center text-sm text-gray-600 dark:text-gray-400">
+            <p>This app enhances BibTeX entries using data from the <a href="https://www.semanticscholar.org/" target="_blank" class="text-primary hover:underline">Semantic Scholar</a> API.</p>
+        </footer>
+    </div>
+
+    <script>
+        // DOM Elements
+        const bibtexInput = document.getElementById('bibtexInput');
+        const bibtexOutput = document.getElementById('bibtexOutput');
+        const processBtn = document.getElementById('processBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const copyBtn = document.getElementById('copyBtn');
+        const copyMessage = document.getElementById('copyMessage');
+        const outputContent = document.getElementById('outputContent');
+        const loadingOutput = document.getElementById('loadingOutput');
+        const errorOutput = document.getElementById('errorOutput');
+        const errorMessage = document.getElementById('errorMessage');
+        const paperDetailsSection = document.getElementById('paperDetailsSection');
+        const paperDetails = document.getElementById('paperDetails');
+
+        // Constants
+        const SEMANTIC_SCHOLAR_API_BASE = 'https://api.semanticscholar.org/graph/v1/paper/';
+        const FIELDS = 'title,authors,year,venue,url,abstract,citationCount,externalIds,journal,fieldsOfStudy,publicationTypes,publicationDate,openAccessPdf,isOpenAccess';
+
+        // Event Listeners
+        processBtn.addEventListener('click', processBibtex);
+        clearBtn.addEventListener('click', clearAll);
+        copyBtn.addEventListener('click', copyEnhancedBibtex);
+
+        // Main function to process BibTeX
+        async function processBibtex() {
+            const input = bibtexInput.value.trim();
+            
+            if (!input) {
+                showError('Please enter BibTeX data.');
+                return;
+            }
+
+            showLoading();
+            hideError();
+
+            try {
+                // Parse BibTeX to find paper IDs
+                const entries = parseBibtex(input);
+                
+                if (entries.length === 0) {
+                    showError('No valid BibTeX entries found.');
+                    return;
+                }
+
+                // Process each entry
+                const enhancedEntries = [];
+                const paperDetailsData = [];
+
+                for (const entry of entries) {
+                    try {
+                        // Extract ID from URL if present
+                        let paperId = null;
+                        
+                        if (entry.url) {
+                            // Check for CorpusID format
+                            const corpusIdMatch = entry.url.match(/CorpusID:(\d+)/i);
+                            if (corpusIdMatch) {
+                                paperId = `CorpusID:${corpusIdMatch[1]}`;
+                            }
+                            
+                            // Check for direct paper ID format (alternative format)
+                            const paperIdMatch = entry.url.match(/paper\/([^\/\s]+)/i);
+                            if (!paperId && paperIdMatch) {
+                                paperId = paperIdMatch[1];
+                            }
+                        }
+                        
+                        if (!paperId) {
+                            // If no URL or ID found, keep the original entry
+                            enhancedEntries.push(formatBibtex(entry));
+                            continue;
+                        }
+
+                        // Fetch paper details from Semantic Scholar
+                        const paperData = await fetchPaperDetails(paperId);
+                        
+                        if (!paperData) {
+                            // If fetch failed, keep the original entry
+                            enhancedEntries.push(formatBibtex(entry));
+                            continue;
+                        }
+                        
+                        // Enhance the entry with additional data
+                        const enhancedEntry = enhanceEntry(entry, paperData);
+                        enhancedEntries.push(formatBibtex(enhancedEntry));
+                        
+                        // Save paper details for display
+                        paperDetailsData.push(paperData);
+                    } catch (err) {
+                        console.error('Error processing entry:', err);
+                        // Keep original entry if there was an error
+                        enhancedEntries.push(formatBibtex(entry));
+                    }
+                }
+
+                // Display results
+                bibtexOutput.textContent = enhancedEntries.join('\n\n');
+                displayPaperDetails(paperDetailsData);
+                
+                hideLoading();
+                showOutput();
+            } catch (error) {
+                console.error('Processing error:', error);
+                showError(error.message || 'Failed to process BibTeX. Please check your input.');
+            }
+        }
+
+        // Parse BibTeX string into objects
+        function parseBibtex(bibtexString) {
+            const entries = [];
+            const entryRegex = /@(\w+)\s*\{\s*([^,]+)(?:\s*,\s*|\s*\}\s*)(.+?)(?=\s*@\w+\s*\{|\s*$)/gs;
+            const fieldRegex = /(\w+)\s*=\s*(?:\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}|"([^"]*)"|([\w\d:-]+))/g;
+
+            let match;
+            while ((match = entryRegex.exec(bibtexString))) {
+                const [_, type, key, fieldsText] = match;
+                
+                const entry = {
+                    type,
+                    key,
+                    fields: {}
+                };
+                
+                let fieldMatch;
+                while ((fieldMatch = fieldRegex.exec(fieldsText))) {
+                    const [__, fieldName, bracketValue, quotedValue, plainValue] = fieldMatch;
+                    entry[fieldName.toLowerCase()] = bracketValue || quotedValue || plainValue;
+                }
+                
+                entries.push(entry);
+            }
+            
+            return entries;
+        }
+
+        // Format a BibTeX entry object back to string format
+        function formatBibtex(entry) {
+            let result = `@${entry.type}{${entry.key},\n`;
+            
+            // Add all fields
+            for (const [key, value] of Object.entries(entry)) {
+                // Skip type, key, and fields object
+                if (key === 'type' || key === 'key' || key === 'fields') continue;
+                
+                // Format the field
+                result += `  ${key} = {${value}},\n`;
+            }
+            
+            // Remove trailing comma and add closing brace
+            result = result.replace(/,\n$/, '\n');
+            result += '}';
+            
+            return result;
+        }
+
+        // Fetch paper details from Semantic Scholar API
+        async function fetchPaperDetails(paperId) {
+            try {
+                // Construct the API URL
+                const apiUrl = `${SEMANTIC_SCHOLAR_API_BASE}${paperId}?fields=${FIELDS}`;
+                
+                // Fetch data
+                const response = await fetch(apiUrl);
+                
+                if (!response.ok) {
+                    console.error(`API Error (${response.status}): ${response.statusText}`);
+                    return null;
+                }
+                
+                return await response.json();
+            } catch (error) {
+                console.error('Error fetching paper details:', error);
+                return null;
+            }
+        }
+
+        // Enhance a BibTeX entry with Semantic Scholar data
+        function enhanceEntry(entry, paperData) {
+            // Create a copy of the entry to avoid modifying the original
+            const enhanced = {...entry};
+            
+            // Add DOI if available
+            if (paperData.externalIds && paperData.externalIds.DOI) {
+                enhanced.doi = paperData.externalIds.DOI;
+            }
+            
+            // Add PDF URL if available
+            if (paperData.openAccessPdf && paperData.openAccessPdf.url) {
+                enhanced.pdf = paperData.openAccessPdf.url;
+            }
+            
+            // Add URL if not already present
+            if (paperData.url && !enhanced.url) {
+                enhanced.url = paperData.url;
+            }
+            
+            // Update abstract if not present in original
+            if (paperData.abstract && !enhanced.abstract) {
+                enhanced.abstract = paperData.abstract;
+            }
+            
+            return enhanced;
+        }
+
+        // Display paper details in the UI
+        function displayPaperDetails(papers) {
+            if (!papers || papers.length === 0) {
+                paperDetailsSection.classList.add('hidden');
+                return;
+            }
+            
+            paperDetails.innerHTML = '';
+            
+            papers.forEach(paper => {
+                if (!paper) return;
+                
+                // Create paper card
+                const paperCard = document.createElement('div');
+                paperCard.className = 'bg-white dark:bg-gray-700 p-5 rounded-lg shadow';
+                
+                // Format authors
+                const authors = paper.authors ? paper.authors.map(a => a.name).join(', ') : 'Unknown authors';
+                
+                // Get publication info
+                const venue = paper.venue || (paper.journal ? paper.journal.name : '') || '';
+                const year = paper.year || (paper.publicationDate ? paper.publicationDate.substring(0, 4) : 'Unknown year');
+                
+                // Create DOI link
+                let doiLink = '';
+                if (paper.externalIds && paper.externalIds.DOI) {
+                    doiLink = `
+                        <div class="text-sm mb-1">
+                            <span class="font-medium">DOI: </span>
+                            <a href="https://doi.org/${paper.externalIds.DOI}" target="_blank" class="text-primary hover:underline">${paper.externalIds.DOI}</a>
+                        </div>
+                    `;
+                }
+                
+                // Fields of study
+                let fieldsHtml = '';
+                if (paper.fieldsOfStudy && paper.fieldsOfStudy.length > 0) {
+                    const fields = paper.fieldsOfStudy.map(field => {
+                        return `<span class="inline-block bg-gray-100 dark:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-full px-2 py-1 text-xs mr-1 mb-1">${field}</span>`;
+                    }).join(' ');
+                    
+                    fieldsHtml = `
+                        <div class="text-sm mb-3">
+                            <p class="font-medium mb-1">Fields of Study:</p>
+                            <div class="flex flex-wrap">${fields}</div>
+                        </div>
+                    `;
+                }
+                
+                // Abstract
+                let abstractHtml = '';
+                if (paper.abstract) {
+                    abstractHtml = `
+                        <div class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
+                            <p class="font-medium mb-1">Abstract:</p>
+                            <p class="text-sm text-gray-700 dark:text-gray-300">${paper.abstract}</p>
+                        </div>
+                    `;
+                }
+                
+                // PDF link
+                let pdfLink = '';
+                if (paper.openAccessPdf && paper.openAccessPdf.url) {
+                    pdfLink = `
+                        <a href="${paper.openAccessPdf.url}" target="_blank" class="text-primary text-sm flex items-center hover:underline">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                            </svg>
+                            PDF
+                        </a>
+                    `;
+                }
+                
+                // Build paper card HTML
+                paperCard.innerHTML = `
+                    <h3 class="text-lg font-semibold text-primary mb-2">${paper.title || 'Untitled'}</h3>
+                    <p class="text-sm mb-1"><span class="font-medium">Authors:</span> ${authors}</p>
+                    ${venue ? `<p class="text-sm mb-1"><span class="font-medium">Venue:</span> ${venue}</p>` : ''}
+                    <p class="text-sm mb-1"><span class="font-medium">Year:</span> ${year}</p>
+                    ${paper.citationCount !== undefined ? `<p class="text-sm mb-1"><span class="font-medium">Citations:</span> ${paper.citationCount}</p>` : ''}
+                    ${doiLink}
+                    ${fieldsHtml}
+                    ${abstractHtml}
+                    <div class="flex flex-wrap gap-2 mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
+                        <a href="${paper.url}" target="_blank" class="text-primary text-sm flex items-center hover:underline">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 010-5.656l4-4a4 4 0 015.656 5.656l-1.101 1.102" />
+                            </svg>
+                            View on Semantic Scholar
+                        </a>
+                        ${paper.externalIds && paper.externalIds.DOI ? `
+                        <a href="https://doi.org/${paper.externalIds.DOI}" target="_blank" class="text-primary text-sm flex items-center hover:underline">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            </svg>
+                            View via DOI
+                        </a>
+                        ` : ''}
+                        ${pdfLink}
+                    </div>
+                `;
+                
+                paperDetails.appendChild(paperCard);
+            });
+            
+            paperDetailsSection.classList.remove('hidden');
+        }
+
+        // Copy enhanced BibTeX to clipboard
+        function copyEnhancedBibtex() {
+            navigator.clipboard.writeText(bibtexOutput.textContent)
+                .then(() => {
+                    copyMessage.classList.remove('hidden');
+                    setTimeout(() => {
+                        copyMessage.classList.add('hidden');
+                    }, 2000);
+                })
+                .catch(err => {
+                    console.error('Failed to copy: ', err);
+                });
+        }
+
+        // Clear all inputs and outputs
+        function clearAll() {
+            bibtexInput.value = '';
+            bibtexOutput.textContent = '';
+            paperDetails.innerHTML = '';
+            hideOutput();
+            hideError();
+            hideLoading();
+            paperDetailsSection.classList.add('hidden');
+        }
+
+        // Show loading state
+        function showLoading() {
+            loadingOutput.classList.remove('hidden');
+            outputContent.classList.add('hidden');
+        }
+
+        // Hide loading state
+        function hideLoading() {
+            loadingOutput.classList.add('hidden');
+        }
+
+        // Show output
+        function showOutput() {
+            outputContent.classList.remove('hidden');
+        }
+
+        // Hide output
+        function hideOutput() {
+            outputContent.classList.add('hidden');
+        }
+
+        // Show error message
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorOutput.classList.remove('hidden');
+            loadingOutput.classList.add('hidden');
+            outputContent.classList.add('hidden');
+        }
+
+        // Hide error message
+        function hideError() {
+            errorOutput.classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
