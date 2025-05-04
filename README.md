@@ -6,6 +6,8 @@
 可以用DeepSeek来推荐关键词
 用[keywords_find](./keywords_find.html)来缩小检索访问。
 semantic scholar来找到一篇最相关论文，然后顺藤摸瓜根据参考文献以及被引文献来找到相关文献，也是非常方便。semantic scholar支持选择和保存文献，非常实用。也支持导出BIBTEX格式，其缺点是文献内容不全，可以通过[bibtex_enhance](./bibtex_enhance.html)来补充和完善。
+libgen也是非常好的文献资料来源：[libgen search](./libgen_search.html)
+
 ### 2） 全文下载
 [学术文献搜索器](./Academic_Search_mul.html)所导出文献包括全文下载地址。
 部分文献可以通过SCI-HUB来下载。
