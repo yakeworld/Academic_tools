@@ -1,0 +1,922 @@
+实现libgen MCP server，参考以下代码原理：<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Library Genesis Search</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#5D5CDE',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-200">
+    <div class="container mx-auto px-4 py-8 max-w-5xl">
+        <header class="mb-8 text-center">
+            <h1 class="text-3xl font-bold mb-2">Library Genesis Search</h1>
+            <p class="text-gray-600 dark:text-gray-400">Search for books, articles, and academic papers</p>
+        </header>
+
+        <div class="mb-6">
+            <form id="search-form" class="flex flex-col md:flex-row gap-4">
+                <div class="flex-grow">
+                    <input 
+                        type="text" 
+                        id="search-query" 
+                        placeholder="Enter book title, author, ISBN..."
+                        class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-base focus:outline-none focus:ring-2 focus:ring-primary"
+                        required
+                    >
+                </div>
+                <div class="flex gap-2">
+                    <select 
+                        id="search-field" 
+                        class="px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-base focus:outline-none focus:ring-2 focus:ring-primary"
+                    >
+                        <option value="title">Title</option>
+                        <option value="author">Author</option>
+                        <option value="isbn">ISBN</option>
+                    </select>
+                    <button 
+                        type="submit" 
+                        class="px-6 py-3 bg-primary hover:bg-opacity-90 text-white font-medium rounded-lg transition duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                    >
+                        Search
+                    </button>
+                </div>
+            </form>
+        </div>
+        
+        <div class="mb-6 flex items-center justify-between">
+            <div class="flex items-center">
+                <button id="toggle-debug" class="flex items-center text-sm text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>Toggle Debug Panel</span>
+                </button>
+            </div>
+        </div>
+        
+        <div id="debug-panel" class="mb-8 hidden">
+            <div class="border border-gray-300 dark:border-gray-700 rounded-lg overflow-hidden bg-white dark:bg-gray-800">
+                <div class="bg-gray-100 dark:bg-gray-700 px-4 py-2 border-b border-gray-300 dark:border-gray-600 flex justify-between items-center">
+                    <h3 class="font-medium">Debug Information</h3>
+                    <div class="flex space-x-2">
+                        <button id="clear-debug" class="text-xs text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary transition">Clear</button>
+                        <button id="copy-debug" class="text-xs text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary transition">Copy</button>
+                    </div>
+                </div>
+                <div class="p-4">
+                    <div class="mb-3">
+                        <h4 class="text-sm font-semibold mb-1">HTTP Response Headers:</h4>
+                        <pre id="debug-headers" class="bg-gray-50 dark:bg-gray-900 p-3 rounded text-xs font-mono overflow-x-auto max-h-40 whitespace-pre-wrap"></pre>
+                    </div>
+                    <div class="mb-3">
+                        <h4 class="text-sm font-semibold mb-1">Parsed Book Data:</h4>
+                        <pre id="debug-books" class="bg-gray-50 dark:bg-gray-900 p-3 rounded text-xs font-mono overflow-x-auto max-h-80 whitespace-pre-wrap"></pre>
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-semibold mb-1">Cover Sources Attempted:</h4>
+                        <pre id="debug-covers" class="bg-gray-50 dark:bg-gray-900 p-3 rounded text-xs font-mono overflow-x-auto max-h-40 whitespace-pre-wrap"></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="loading-indicator" class="hidden text-center py-12">
+            <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-primary border-t-transparent"></div>
+            <p class="mt-4 text-gray-600 dark:text-gray-400">Searching Library Genesis...</p>
+        </div>
+
+        <div id="error-message" class="hidden bg-red-100 dark:bg-red-900 border-l-4 border-red-500 text-red-700 dark:text-red-300 p-4 mb-8 rounded"></div>
+
+        <div id="results-container" class="hidden">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold">Search Results</h2>
+                <span id="results-count" class="text-gray-600 dark:text-gray-400"></span>
+            </div>
+            <div id="results-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            <div id="no-results" class="hidden text-center py-8">
+                <p class="text-gray-600 dark:text-gray-400">No results found. Try a different search term.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Check and set dark mode
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+        
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            if (event.matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        });
+
+        // DOM Elements
+        const searchForm = document.getElementById('search-form');
+        const searchQuery = document.getElementById('search-query');
+        const searchField = document.getElementById('search-field');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const errorMessage = document.getElementById('error-message');
+        const resultsContainer = document.getElementById('results-container');
+        const resultsCount = document.getElementById('results-count');
+        const resultsList = document.getElementById('results-list');
+        const noResults = document.getElementById('no-results');
+
+        // Debug panel functionality
+        const debugPanel = document.getElementById('debug-panel');
+        const toggleDebugBtn = document.getElementById('toggle-debug');
+        const clearDebugBtn = document.getElementById('clear-debug');
+        const copyDebugBtn = document.getElementById('copy-debug');
+        const debugHeaders = document.getElementById('debug-headers');
+        const debugBooks = document.getElementById('debug-books');
+        const debugCovers = document.getElementById('debug-covers');
+        
+        // Global variables to track debug info
+        let lastSearchUrl = '';
+        let lastHeaders = {};
+        let lastParsedBooks = [];
+        let coverAttempts = {};
+        
+        // Toggle debug panel visibility
+        toggleDebugBtn.addEventListener('click', function() {
+            debugPanel.classList.toggle('hidden');
+        });
+        
+        // Clear debug info
+        clearDebugBtn.addEventListener('click', function() {
+            debugHeaders.textContent = '';
+            debugBooks.textContent = '';
+            debugCovers.textContent = '';
+            coverAttempts = {};
+        });
+        
+        // Copy debug info to clipboard
+        copyDebugBtn.addEventListener('click', function() {
+            const debugInfo = {
+                searchUrl: lastSearchUrl,
+                headers: lastHeaders,
+                books: lastParsedBooks,
+                coverAttempts: coverAttempts
+            };
+            
+            const debugText = JSON.stringify(debugInfo, null, 2);
+            
+            // Use Clipboard API to copy text
+            navigator.clipboard.writeText(debugText).then(function() {
+                copyDebugBtn.textContent = 'Copied!';
+                setTimeout(function() {
+                    copyDebugBtn.textContent = 'Copy';
+                }, 2000);
+            }).catch(function() {
+                copyDebugBtn.textContent = 'Failed to copy';
+                setTimeout(function() {
+                    copyDebugBtn.textContent = 'Copy';
+                }, 2000);
+            });
+        });
+        
+        // Function to log cover attempt
+        function logCoverAttempt(bookId, url, success) {
+            if (!coverAttempts[bookId]) {
+                coverAttempts[bookId] = [];
+            }
+            
+            coverAttempts[bookId].push({
+                url,
+                success,
+                timestamp: new Date().toISOString()
+            });
+            
+            // Update debug display if panel is visible
+            if (!debugPanel.classList.contains('hidden')) {
+                debugCovers.textContent = JSON.stringify(coverAttempts, null, 2);
+            }
+        }
+
+        // Search Libgen using XMLHttpRequest
+        searchForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const query = searchQuery.value.trim();
+            const field = searchField.value;
+            
+            if (!query) return;
+            
+            // Show loading, hide results and errors
+            loadingIndicator.classList.remove('hidden');
+            resultsContainer.classList.add('hidden');
+            errorMessage.classList.add('hidden');
+            
+            // Reset debug info
+            lastHeaders = {};
+            lastParsedBooks = [];
+            coverAttempts = {};
+            
+            // Create XMLHttpRequest
+            const xhr = new XMLHttpRequest();
+            
+            // We'll use a CORS proxy allowed by Poe's CSP
+            const corsProxy = 'https://corsproxy.io/?';
+            
+            // Construct the Libgen search URL based on field
+            let libgenSearchUrl;
+            switch (field) {
+                case 'author':
+                    libgenSearchUrl = `https://libgen.is/search.php?req=${encodeURIComponent(query)}&column=author`;
+                    break;
+                case 'isbn':
+                    libgenSearchUrl = `https://libgen.is/search.php?req=${encodeURIComponent(query)}&column=identifier`;
+                    break;
+                default: // title
+                    libgenSearchUrl = `https://libgen.is/search.php?req=${encodeURIComponent(query)}&column=title`;
+            }
+            
+            lastSearchUrl = libgenSearchUrl;
+            
+            const proxyUrl = corsProxy + encodeURIComponent(libgenSearchUrl);
+            
+            xhr.open('GET', proxyUrl, true);
+            
+            xhr.onload = function() {
+                loadingIndicator.classList.add('hidden');
+                
+                // Log response headers for debug
+                lastHeaders = {
+                    status: xhr.status,
+                    statusText: xhr.statusText,
+                    responseURL: xhr.responseURL,
+                    headers: xhr.getAllResponseHeaders()
+                };
+                
+                // Update debug panel
+                debugHeaders.textContent = JSON.stringify(lastHeaders, null, 2);
+                
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    // Parse HTML response to extract book data
+                    const parser = new DOMParser();
+                    const htmlDoc = parser.parseFromString(xhr.responseText, 'text/html');
+                    
+                    // Extract book data from the table
+                    const books = parseLibgenResults(htmlDoc);
+                    lastParsedBooks = books;
+                    
+                    // Update debug panel
+                    debugBooks.textContent = JSON.stringify(books, null, 2);
+                    
+                    displayResults(books);
+                } else {
+                    showError('Failed to fetch results. Please try again later.');
+                }
+            };
+            
+            xhr.onerror = function() {
+                loadingIndicator.classList.add('hidden');
+                showError('Network error occurred. Please check your internet connection.');
+                
+                // Log error for debug
+                lastHeaders = {
+                    error: 'Network error',
+                    status: xhr.status,
+                    statusText: xhr.statusText
+                };
+                
+                // Update debug panel
+                debugHeaders.textContent = JSON.stringify(lastHeaders, null, 2);
+            };
+            
+            xhr.send();
+        });
+
+        // Parse Libgen HTML response to extract book data
+        function parseLibgenResults(htmlDoc) {
+            const books = [];
+            
+            // Libgen typically has a table with results
+            const tables = htmlDoc.querySelectorAll('table');
+            let resultsTable;
+            
+            // Find the results table (usually the 3rd table)
+            for (let i = 0; i < tables.length; i++) {
+                if (tables[i].querySelectorAll('tr').length > 1) {
+                    const headerRow = tables[i].querySelector('tr');
+                    if (headerRow && headerRow.textContent.includes('ID') && 
+                        headerRow.textContent.includes('Author') && 
+                        headerRow.textContent.includes('Title')) {
+                        resultsTable = tables[i];
+                        break;
+                    }
+                }
+            }
+            
+            if (!resultsTable) return books;
+            
+            // Get column indices from header row
+            const headerRow = resultsTable.querySelector('tr');
+            const headers = Array.from(headerRow.querySelectorAll('td, th')).map(cell => cell.textContent.trim());
+            
+            // Determine column indices
+            const idIndex = headers.findIndex(h => h.includes('ID'));
+            const authorIndex = headers.findIndex(h => h.includes('Author'));
+            const titleIndex = headers.findIndex(h => h.includes('Title'));
+            const publisherIndex = headers.findIndex(h => h.includes('Publisher'));
+            const yearIndex = headers.findIndex(h => h.includes('Year'));
+            const pagesIndex = headers.findIndex(h => h.includes('Pages'));
+            const languageIndex = headers.findIndex(h => h.includes('Language'));
+            const sizeIndex = headers.findIndex(h => h.includes('Size'));
+            const fileTypeIndex = headers.findIndex(h => h.includes('Extension'));
+            const mirrorIndex = headers.findIndex(h => h.includes('Mirror'));
+            const isbnIndex = headers.findIndex(h => h.includes('ISBN') || h.includes('Identifier'));
+            const seriesIndex = headers.findIndex(h => h.includes('Series'));
+            const md5Index = headers.findIndex(h => h.includes('Hash') || h.includes('MD5'));
+            
+            // Skip the header row
+            const rows = resultsTable.querySelectorAll('tr:not(:first-child)');
+            
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                if (cells.length >= 8) {
+                    // Extract data from cells using determined indices
+                    const getId = (idx) => idx >= 0 && idx < cells.length ? cells[idx]?.textContent?.trim() || '' : '';
+                    
+                    const id = getId(idIndex);
+                    const authors = getId(authorIndex) || 'Unknown Author';
+                    const titleCell = titleIndex >= 0 && titleIndex < cells.length ? cells[titleIndex] : null;
+                    const title = titleCell?.querySelector('a')?.textContent?.trim() || 'Untitled';
+                    const detailsUrl = titleCell?.querySelector('a')?.href || '';
+                    const publisher = getId(publisherIndex) || 'Unknown Publisher';
+                    const year = getId(yearIndex);
+                    const pages = getId(pagesIndex);
+                    const language = getId(languageIndex);
+                    const size = getId(sizeIndex);
+                    const fileType = getId(fileTypeIndex);
+                    const isbn = getId(isbnIndex);
+                    const series = getId(seriesIndex);
+                    const md5hash = getId(md5Index);
+                    
+                    // Try to extract cover image URL if available
+                    let coverUrl = '';
+                    let coverSources = [];
+                    
+                    // First method: direct image in row
+                    const imgElement = row.querySelector('img[src*="covers"]');
+                    if (imgElement && imgElement.src) {
+                        coverSources.push(imgElement.src);
+                    }
+                    
+                    // Second method: sometimes covers are in the title column
+                    if (titleCell) {
+                        const titleImg = titleCell.querySelector('img[src*="covers"]');
+                        if (titleImg && titleImg.src) {
+                            coverSources.push(titleImg.src);
+                        }
+                    }
+                    
+                    // Third method: try to construct cover URLs using ID or MD5
+                    if (md5hash) {
+                        // Try multiple known LibGen cover URL patterns
+                        coverSources.push(`https://library.lol/covers/${md5hash}`);
+                        coverSources.push(`https://covers.zlibcdn2.com/covers/${md5hash}/`);
+                        coverSources.push(`https://libgen.rocks/covers/${md5hash.substring(0, 1)}/${md5hash}.jpg`);
+                        coverSources.push(`https://libgen.rs/covers/${md5hash.substring(0, 1)}/${md5hash}.jpg`);
+                        coverSources.push(`https://library.bz/covers/${md5hash}`);
+                        coverSources.push(`https://libgen.li/covers/${md5hash.substring(0, 1)}/${md5hash}.jpg`);
+                    }
+                    
+                    // Fourth method: try by ISBN if available
+                    if (isbn) {
+                        const cleanIsbn = isbn.replace(/[-\s]/g, '').trim();
+                        if (cleanIsbn.length > 0) {
+                            coverSources.push(`https://covers.openlibrary.org/b/isbn/${cleanIsbn}-M.jpg`);
+                            coverSources.push(`https://books.google.com/books/content?id=ISBN:${cleanIsbn}&printsec=frontcover&img=1&zoom=1&source=gbs_api`);
+                        }
+                    }
+                    
+                    // We'll save all potential cover sources for later use
+                    // Instead of using proxy for all, we'll test them directly in the browser
+                    // The first valid one will be used
+                    
+                    // Extract mirrors/download links
+                    let downloadLinks = [];
+                    const mirrorCell = mirrorIndex >= 0 && mirrorIndex < cells.length ? cells[mirrorIndex] : null;
+                    if (mirrorCell) {
+                        const links = mirrorCell.querySelectorAll('a');
+                        links.forEach(link => {
+                            if (link.href && link.textContent) {
+                                downloadLinks.push({
+                                    text: link.textContent.trim(),
+                                    href: link.href
+                                });
+                            }
+                        });
+                    }
+                    
+                    books.push({
+                        id,
+                        authors,
+                        title,
+                        publisher,
+                        year,
+                        pages,
+                        language,
+                        size,
+                        fileType,
+                        downloadLinks,
+                        detailsUrl,
+                        isbn,
+                        series,
+                        md5hash,
+                        coverUrl,
+                        coverSources
+                    });
+                }
+            });
+            
+            return books;
+        }
+
+        // Modal for detailed book view
+        function createBookDetailsModal() {
+            // Create modal container if it doesn't exist
+            if (!document.getElementById('book-details-modal')) {
+                const modal = document.createElement('div');
+                modal.id = 'book-details-modal';
+                modal.className = 'fixed inset-0 z-50 hidden overflow-y-auto';
+                modal.setAttribute('role', 'dialog');
+                modal.setAttribute('aria-modal', 'true');
+                modal.setAttribute('aria-labelledby', 'modal-title');
+                modal.innerHTML = `
+                    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+                        <div class="fixed inset-0 transition-opacity" aria-hidden="true">
+                            <div class="absolute inset-0 bg-gray-900 opacity-75"></div>
+                        </div>
+                        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+                        <div class="inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
+                            <div class="absolute top-0 right-0 pt-4 pr-4">
+                                <button id="close-modal-btn" type="button" class="text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary rounded-full p-1" aria-label="Close modal">
+                                    <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
+                            <div id="book-details-content" class="p-6"></div>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+                
+                // Add close modal functionality
+                const closeModal = () => {
+                    document.getElementById('book-details-modal').classList.add('hidden');
+                    document.body.classList.remove('overflow-hidden');
+                };
+                
+                document.getElementById('close-modal-btn').addEventListener('click', closeModal);
+                
+                // Close modal on escape key
+                document.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape' && !document.getElementById('book-details-modal').classList.contains('hidden')) {
+                        closeModal();
+                    }
+                });
+                
+                // Close modal when clicking outside the content
+                modal.addEventListener('click', function(e) {
+                    if (e.target === modal) {
+                        closeModal();
+                    }
+                });
+            }
+        }
+        
+        // Show detailed book information in modal
+        function showBookDetails(book) {
+            // Create modal if it doesn't exist
+            createBookDetailsModal();
+            
+            const modal = document.getElementById('book-details-modal');
+            const content = document.getElementById('book-details-content');
+            
+            // Build content HTML
+            let contentHtml = `
+                <div class="flex flex-col md:flex-row gap-6">
+                    <div class="w-full md:w-1/3 flex-shrink-0">
+                        <div class="w-full h-[320px] max-w-[240px] mx-auto rounded shadow overflow-hidden book-detail-cover">
+                            ${book.coverUrl ? 
+                                `<img src="${book.coverUrl}" alt="Book Cover" class="w-full h-full object-contain bg-gray-100 dark:bg-gray-800">` :
+                                generatePlaceholderCover(book)
+                            }
+                        </div>
+                        
+                        ${book.isbn ? `
+                        <div class="mt-4 text-center">
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Try alternate covers:</p>
+                            <div class="flex justify-center gap-2">
+                                <button class="alt-cover-btn px-2 py-1 text-xs bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition" data-source="google" data-isbn="${book.isbn}">Google Books</button>
+                                <button class="alt-cover-btn px-2 py-1 text-xs bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition" data-source="openlib" data-isbn="${book.isbn}">Open Library</button>
+                            </div>
+                        </div>
+                        ` : ''}
+                    </div>
+                    <div class="flex-grow">
+                        <h2 class="text-2xl font-bold mb-2">${book.title}</h2>
+                        <p class="text-xl text-gray-700 dark:text-gray-300 mb-4">${book.authors}</p>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3 mb-6">
+                            ${book.publisher ? `<div><span class="font-semibold">Publisher:</span> ${book.publisher}</div>` : ''}
+                            ${book.year ? `<div><span class="font-semibold">Year:</span> ${book.year}</div>` : ''}
+                            ${book.language ? `<div><span class="font-semibold">Language:</span> ${book.language}</div>` : ''}
+                            ${book.pages ? `<div><span class="font-semibold">Pages:</span> ${book.pages}</div>` : ''}
+                            ${book.size ? `<div><span class="font-semibold">File Size:</span> ${book.size}</div>` : ''}
+                            ${book.fileType ? `<div><span class="font-semibold">Format:</span> ${book.fileType}</div>` : ''}
+                            ${book.isbn ? `<div><span class="font-semibold">ISBN/Identifier:</span> ${book.isbn}</div>` : ''}
+                            ${book.series ? `<div><span class="font-semibold">Series:</span> ${book.series}</div>` : ''}
+                            ${book.id ? `<div><span class="font-semibold">LibGen ID:</span> ${book.id}</div>` : ''}
+                            ${book.md5hash ? `<div><span class="font-semibold">MD5 Hash:</span> <span class="font-mono text-sm">${book.md5hash}</span></div>` : ''}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-8">
+                    <h3 class="text-lg font-semibold mb-3">Download Links</h3>
+                    <div class="flex flex-wrap gap-3">
+                        ${book.downloadLinks.map(link => 
+                            `<a href="${link.href}" target="_blank" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-opacity-90 transition flex items-center">
+                                <span class="mr-1">${link.text}</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                </svg>
+                            </a>`
+                        ).join('')}
+                    </div>
+                </div>
+            `;
+            
+            // Update modal content
+            content.innerHTML = contentHtml;
+            
+            // Add event listeners for alternate cover buttons
+            const altCoverBtns = content.querySelectorAll('.alt-cover-btn');
+            altCoverBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const source = this.getAttribute('data-source');
+                    const isbn = this.getAttribute('data-isbn');
+                    if (isbn && source) {
+                        loadAlternateCover(isbn, source);
+                    }
+                });
+            });
+            
+            // Handle cover image errors
+            const coverImg = content.querySelector('.book-detail-cover img');
+            if (coverImg) {
+                coverImg.onerror = function() {
+                    const coverContainer = this.parentNode;
+                    if (coverContainer) {
+                        coverContainer.innerHTML = generatePlaceholderCover(book);
+                    }
+                };
+            }
+            
+            // Show modal
+            modal.classList.remove('hidden');
+            document.body.classList.add('overflow-hidden');
+        }
+        
+        // Load alternate cover image from different sources
+        function loadAlternateCover(isbn, source) {
+            const coverContainer = document.querySelector('.book-detail-cover');
+            if (!coverContainer) return;
+            
+            // Clean ISBN (remove dashes, spaces)
+            const cleanIsbn = isbn.replace(/[-\s]/g, '');
+            
+            let coverUrl = '';
+            
+            if (source === 'google') {
+                // Google Books API cover URL pattern
+                coverUrl = `https://books.google.com/books/content?id=ISBN:${cleanIsbn}&printsec=frontcover&img=1&zoom=1&source=gbs_api`;
+            } else if (source === 'openlib') {
+                // Open Library cover URL pattern
+                coverUrl = `https://covers.openlibrary.org/b/isbn/${cleanIsbn}-L.jpg`;
+            }
+            
+            if (coverUrl) {
+                const newImg = document.createElement('img');
+                newImg.className = 'w-full h-full object-contain bg-gray-100 dark:bg-gray-800';
+                newImg.alt = 'Book Cover';
+                
+                // Set a loading state
+                coverContainer.innerHTML = `
+                    <div class="w-full h-full flex items-center justify-center bg-gray-100 dark:bg-gray-800">
+                        <div class="animate-spin rounded-full h-8 w-8 border-4 border-primary border-t-transparent"></div>
+                    </div>
+                `;
+                
+                // Handle image load errors
+                newImg.onerror = function() {
+                    coverContainer.innerHTML = `
+                        <div class="w-full h-full flex flex-col items-center justify-center bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 p-4 text-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <p class="text-sm">Cover not found from this source</p>
+                        </div>
+                    `;
+                };
+                
+                // When image loads successfully, add it to the container
+                newImg.onload = function() {
+                    coverContainer.innerHTML = '';
+                    coverContainer.appendChild(newImg);
+                };
+                
+                // Set image source to start loading
+                newImg.src = coverUrl;
+            }
+        }
+
+        // Generate a placeholder cover
+        function generatePlaceholderCover(book) {
+            const colors = [
+                '#264653', '#2a9d8f', '#e9c46a', '#f4a261', '#e76f51',
+                '#606c38', '#283618', '#8338ec', '#fb5607', '#3a86ff'
+            ];
+            
+            // Use hash of book title to get consistent color
+            const hash = book.title.split('').reduce((acc, char) => {
+                return char.charCodeAt(0) + ((acc << 5) - acc);
+            }, 0);
+            
+            const color = colors[Math.abs(hash) % colors.length];
+            
+            // Get initials from title (up to 2 characters)
+            let initials = '';
+            const words = book.title.split(' ');
+            if (words.length >= 2) {
+                initials = words[0][0] + words[1][0];
+            } else if (words.length === 1 && words[0].length > 1) {
+                initials = words[0].substring(0, 2);
+            } else if (words.length === 1) {
+                initials = words[0][0];
+            } else {
+                initials = 'BK';
+            }
+            
+            return `
+                <div class="w-full h-full flex items-center justify-center text-white text-xl font-bold" style="background-color: ${color};">
+                    ${initials.toUpperCase()}
+                </div>
+            `;
+        }
+        
+        // Try loading cover images from multiple sources until one works
+        function tryLoadCoverFromSources(book, containerElement) {
+            if (!book || !containerElement) return;
+            
+            // Display placeholder initially
+            containerElement.innerHTML = generatePlaceholderCover(book);
+            
+            // If no cover sources, we're done
+            if (!book.coverSources || book.coverSources.length === 0) return;
+            
+            // For debug purposes, create a unique identifier for this book if it doesn't have an ID
+            const bookId = book.id || book.md5hash || `book-${Math.random().toString(36).substring(2, 10)}`;
+            
+            // Keep track of which source we're trying
+            let currentSourceIndex = 0;
+            
+            // Function to try the next source
+            function tryNextSource() {
+                if (currentSourceIndex >= book.coverSources.length) {
+                    // We've tried all sources, keep the placeholder
+                    return;
+                }
+                
+                const coverUrl = book.coverSources[currentSourceIndex];
+                currentSourceIndex++;
+                
+                // Log attempt to debug panel
+                logCoverAttempt(bookId, coverUrl, 'pending');
+                
+                // Create image element
+                const img = new Image();
+                img.className = 'w-full h-full object-cover bg-gray-100 dark:bg-gray-800';
+                img.alt = 'Book Cover';
+                
+                // On success, replace placeholder with image
+                img.onload = function() {
+                    // Only replace if image has actual dimensions (some servers return 1x1 px for missing images)
+                    if (this.naturalWidth > 1 && this.naturalHeight > 1) {
+                        containerElement.innerHTML = '';
+                        containerElement.appendChild(img);
+                        // Update book's coverUrl for details view
+                        book.coverUrl = coverUrl;
+                        
+                        // Log success to debug panel
+                        logCoverAttempt(bookId, coverUrl, true);
+                    } else {
+                        // Image too small, try next source
+                        logCoverAttempt(bookId, coverUrl, false, 'Image too small');
+                        tryNextSource();
+                    }
+                };
+                
+                // On error, try next source
+                img.onerror = function() {
+                    logCoverAttempt(bookId, coverUrl, false, 'Failed to load');
+                    tryNextSource();
+                };
+                
+                // Start loading
+                img.src = coverUrl;
+            }
+            
+            // Start trying sources
+            tryNextSource();
+        }
+        
+        // Show detailed book information in modal without cover
+        function showBookDetails(book) {
+            // Create modal if it doesn't exist
+            createBookDetailsModal();
+            
+            const modal = document.getElementById('book-details-modal');
+            const content = document.getElementById('book-details-content');
+            
+            // Build content HTML without cover
+            let contentHtml = `
+                <div>
+                    <h2 class="text-2xl font-bold mb-2">${book.title}</h2>
+                    <p class="text-xl text-gray-700 dark:text-gray-300 mb-4">${book.authors}</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3 mb-6">
+                        ${book.publisher ? `<div><span class="font-semibold">Publisher:</span> ${book.publisher}</div>` : ''}
+                        ${book.year ? `<div><span class="font-semibold">Year:</span> ${book.year}</div>` : ''}
+                        ${book.language ? `<div><span class="font-semibold">Language:</span> ${book.language}</div>` : ''}
+                        ${book.pages ? `<div><span class="font-semibold">Pages:</span> ${book.pages}</div>` : ''}
+                        ${book.size ? `<div><span class="font-semibold">File Size:</span> ${book.size}</div>` : ''}
+                        ${book.fileType ? `<div><span class="font-semibold">Format:</span> ${book.fileType}</div>` : ''}
+                        ${book.isbn ? `<div><span class="font-semibold">ISBN/Identifier:</span> ${book.isbn}</div>` : ''}
+                        ${book.series ? `<div><span class="font-semibold">Series:</span> ${book.series}</div>` : ''}
+                        ${book.id ? `<div><span class="font-semibold">LibGen ID:</span> ${book.id}</div>` : ''}
+                        ${book.md5hash ? `<div><span class="font-semibold">MD5 Hash:</span> <span class="font-mono text-sm">${book.md5hash}</span></div>` : ''}
+                    </div>
+                
+                    <div class="mt-6">
+                        <h3 class="text-lg font-semibold mb-3">Download Links</h3>
+                        <div class="flex flex-wrap gap-3">
+                            ${book.downloadLinks.map(link => 
+                                `<a href="${link.href}" target="_blank" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-opacity-90 transition flex items-center">
+                                    <span class="mr-1">${link.text}</span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                    </svg>
+                                </a>`
+                            ).join('')}
+                        </div>
+                    </div>
+
+                    ${book.detailsUrl ? `
+                    <div class="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
+                        <a href="${book.detailsUrl}" target="_blank" class="hover:underline text-primary flex items-center justify-center">
+                            <span>View on Libgen</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            </svg>
+                        </a>
+                    </div>
+                    ` : ''}
+                </div>
+            `;
+            
+            // Update modal content
+            content.innerHTML = contentHtml;
+            
+            // Show modal
+            modal.classList.remove('hidden');
+            document.body.classList.add('overflow-hidden');
+        }
+
+        // Display the search results
+        function displayResults(books) {
+            resultsContainer.classList.remove('hidden');
+            resultsList.innerHTML = '';
+            
+            if (books.length === 0) {
+                noResults.classList.remove('hidden');
+                resultsCount.textContent = '0 books found';
+                return;
+            }
+            
+            noResults.classList.add('hidden');
+            resultsCount.textContent = `${books.length} books found`;
+            
+            books.forEach(book => {
+                const bookCard = document.createElement('div');
+                bookCard.className = 'border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200';
+                
+                const fileTypeBadge = getFileTypeBadge(book.fileType);
+                
+                // No cover, just show text information
+                bookCard.innerHTML = `
+                    <div class="p-4">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="text-lg font-semibold">${book.title}</h3>
+                            ${fileTypeBadge}
+                        </div>
+                        <p class="text-gray-700 dark:text-gray-300 mb-2">${book.authors}</p>
+                        
+                        <div class="flex flex-wrap gap-2 mb-2 text-sm text-gray-600 dark:text-gray-400">
+                            ${book.year ? `<span>${book.year}</span>` : ''}
+                            ${book.language ? `<span>${book.language}</span>` : ''}
+                            ${book.pages ? `<span>${book.pages} pages</span>` : ''}
+                            ${book.size ? `<span>${book.size}</span>` : ''}
+                        </div>
+                        
+                        ${book.publisher ? `<p class="text-gray-600 dark:text-gray-400 text-sm mb-1">${book.publisher}</p>` : ''}
+                        ${book.isbn ? `<p class="text-gray-600 dark:text-gray-400 text-sm mb-1">ISBN: ${book.isbn}</p>` : ''}
+                        ${book.series ? `<p class="text-gray-600 dark:text-gray-400 text-sm mb-1">Series: ${book.series}</p>` : ''}
+                        
+                        <div class="flex items-center justify-between mt-3">
+                            <button class="view-details-btn text-primary hover:text-opacity-80 text-sm font-medium flex items-center transition">
+                                View Details
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                </svg>
+                            </button>
+                            <span class="text-xs text-gray-500 dark:text-gray-500">${book.id ? `ID: ${book.id}` : ''}</span>
+                        </div>
+                        
+                        <div class="pt-3 mt-3 border-t border-gray-200 dark:border-gray-700">
+                            <p class="text-xs text-gray-500 dark:text-gray-500 mb-1">Download Links (new tab)</p>
+                            <div class="flex flex-wrap gap-2">
+                                ${book.downloadLinks.map(link => 
+                                    `<a href="${link.href}" target="_blank" class="text-sm px-3 py-1 bg-primary bg-opacity-10 text-primary rounded-full hover:bg-opacity-20 transition">${link.text}</a>`
+                                ).join('')}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                resultsList.appendChild(bookCard);
+                
+                // Add click event for "View Details" button
+                const viewDetailsBtn = bookCard.querySelector('.view-details-btn');
+                if (viewDetailsBtn) {
+                    viewDetailsBtn.addEventListener('click', function() {
+                        showBookDetails(book);
+                    });
+                }
+            });
+        }
+
+        // Helper function to create a file type badge
+        function getFileTypeBadge(fileType) {
+            if (!fileType) return '';
+            
+            const type = fileType.toLowerCase();
+            let bgColor, textColor;
+            
+            if (type.includes('pdf')) {
+                bgColor = 'bg-red-100 dark:bg-red-900';
+                textColor = 'text-red-800 dark:text-red-300';
+            } else if (type.includes('epub')) {
+                bgColor = 'bg-green-100 dark:bg-green-900';
+                textColor = 'text-green-800 dark:text-green-300';
+            } else if (type.includes('mobi')) {
+                bgColor = 'bg-blue-100 dark:bg-blue-900';
+                textColor = 'text-blue-800 dark:text-blue-300';
+            } else if (type.includes('djvu')) {
+                bgColor = 'bg-purple-100 dark:bg-purple-900';
+                textColor = 'text-purple-800 dark:text-purple-300';
+            } else {
+                bgColor = 'bg-gray-100 dark:bg-gray-800';
+                textColor = 'text-gray-800 dark:text-gray-300';
+            }
+            
+            return `<span class="text-xs font-medium px-2 py-1 rounded-full ${bgColor} ${textColor}">${fileType}</span>`;
+        }
+
+        // Show error message
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
+
