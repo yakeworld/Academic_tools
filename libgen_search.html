@@ -20,7 +20,7 @@
   </form>
   <div id="loading" class="text-center py-4 hidden">
     <span class="inline-block animate-spin rounded-full h-6 w-6 border-4 border-blue-600 border-t-transparent"></span>
-    <p class="text-gray-600 dark:text-gray-400 mt-2">正在查询...</p>
+    <p id="loading-text" class="text-gray-600 dark:text-gray-400 mt-2">正在查询...</p>
   </div>
   <div id="error" class="hidden bg-red-100 dark:bg-red-900 border-l-4 border-red-500 text-red-700 dark:text-red-300 p-3 my-4 rounded"></div>
   <div id="results" class="space-y-4"></div>
@@ -35,9 +35,53 @@ const resultsDiv = document.getElementById('results');
 
 const proxies = [
   'https://corsproxy.io/?',
-  'https://api.allorigins.win/raw?url='
+  'https://api.allorigins.win/raw?url=',
+  'https://cors-proxy.htmldriven.com/?url=',
+  'https://proxy.cors.sh/',
+  'https://cors.eu.org/'
 ];
-const proxy = proxies[0];
+let currentProxyIndex = 0;
+
+// 尝试使用不同代理获取数据的函数
+async function tryFetchWithProxy(url) {
+  const loadingText = document.getElementById('loading-text');
+  let lastError = null;
+  // 重置代理索引
+  currentProxyIndex = 0;
+  
+  // 尝试所有代理
+  while (currentProxyIndex < proxies.length) {
+    const currentProxy = proxies[currentProxyIndex];
+    try {
+      // 更新加载状态文本
+      loadingText.textContent = `正在使用代理 ${currentProxyIndex + 1}/${proxies.length} 查询...`;
+      
+      const proxiedUrl = currentProxy + encodeURIComponent(url);
+      console.log(`尝试代理 ${currentProxyIndex + 1}/${proxies.length}: ${currentProxy}`);
+      
+      const response = await fetch(proxiedUrl);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP错误: ${response.status}`);
+      }
+      
+      // 成功获取数据
+      loadingText.textContent = `正在处理结果...`;
+      return await response.text();
+    } catch (error) {
+      lastError = error;
+      console.error(`代理 ${currentProxyIndex + 1} 失败:`, error);
+      currentProxyIndex++;
+      
+      if (currentProxyIndex < proxies.length) {
+        loadingText.textContent = `代理 ${currentProxyIndex} 失败，尝试下一个...`;
+      }
+    }
+  }
+  
+  // 如果所有代理都失败了
+  throw new Error('所有CORS代理都失败了。请稍后再试。');
+}
 
 form.addEventListener('submit', function(e){
   e.preventDefault();
@@ -50,8 +94,7 @@ form.addEventListener('submit', function(e){
   loading.classList.remove('hidden');
 
   let url = `https://libgen.is/search.php?req=${encodeURIComponent(q)}&column=${f}`;
-  fetch(proxy + encodeURIComponent(url))
-    .then(res => res.text())
+  tryFetchWithProxy(url)
     .then(html => {
       loading.classList.add('hidden');
       const doc = new DOMParser().parseFromString(html, 'text/html');
@@ -128,12 +171,13 @@ form.addEventListener('submit', function(e){
       }
       resultsDiv.innerHTML = htmlStr || '<div class="text-center text-gray-500 py-6">未找到结果（内容为空）</div>';
     })
-    .catch(()=>{
+    .catch((error)=>{
       loading.classList.add('hidden');
-      errorDiv.textContent = '查询出错，请稍后再试';
+      errorDiv.textContent = '查询出错：' + (error.message || '网络错误，请稍后再试');
       errorDiv.classList.remove('hidden');
     });
 });
 </script>
 </body>
 </html>
+
