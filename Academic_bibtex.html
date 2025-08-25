@@ -1484,61 +1484,55 @@
         }
         
         // Process citations in text
+        // 处理正文中的引用标记
         function processCitations(text) {
-            if (Object.keys(citations).length === 0) return text;
-            
-            // Handle grouped citations [@key1; @key2]
-            let processed = text.replace(/\[@([^;\]]+)(?:;\s*@([^;\]]+))*\]/g, (match) => {
-                // Extract all keys from the group
-                const keys = match.match(/@([^;\]]+)/g).map(k => k.substring(1));
-                
-                if (keys.length === 1) {
-                    // Single citation
-                    return formatCitation(keys[0]);
-                } else {
-                    // Multiple citations
-                    switch (currentCsl) {
-                        case 'apa':
-                        case 'harvard':
-                            // Format: (Author1, Year; Author2, Year)
-                            const formattedCitations = keys.map(key => {
-                                const citation = citations[key];
-                                if (!citation) return key;
-                                const author = citation.author?.[0]?.family || 'Unknown';
-                                const year = citation.issued?.['date-parts']?.[0]?.[0] || citation.year || 'n.d.';
-                                return `${author}, ${year}`;
-                            });
-                            return `(${formattedCitations.join('; ')})`;
-                            
-                        case 'ieee':
-                            // Format: [1, 2, 3]
-                            const ieeeIndices = keys.map(key => {
-                                const allKeys = Object.keys(citations);
-                                return allKeys.indexOf(key) + 1;
-                            }).sort((a, b) => a - b);
-                            return `[${ieeeIndices.join(', ')}]`;
-                            
-                        case 'vancouver':
-                            // Format: (1, 2, 3)
-                            const vanIndices = keys.map(key => {
-                                const allKeys = Object.keys(citations);
-                                return allKeys.indexOf(key) + 1;
-                            }).sort((a, b) => a - b);
-                            return `(${vanIndices.join(', ')})`;
-                            
-                        default:
-                            // Default format for other styles
-                            return match;
-                    }
+          if (Object.keys(citations).length === 0) return text;
+        
+          // 1. 先处理分组引用：[^a; ^b] 或 [@a; @b]
+          text = text.replace(
+            /\[@([^;\]]+)(?:;\s*@([^;\]]+))*\]|\[\^([^;\]]+)(?:;\s*\^([^;\]]+))*\]/g,
+            (match) => {
+              // 提取键：统一把 @ 或 ^ 前缀去掉
+              const keys = match.match(/[@^]([^;\]]+)/g).map(k => k.substring(1));
+        
+              if (keys.length === 1) {
+                return formatCitation(keys[0]);
+              }
+        
+              // 多引用
+              switch (currentCsl) {
+                case 'apa':
+                case 'harvard': {
+                  const formatted = keys.map(k => {
+                    const c = citations[k];
+                    if (!c) return k;
+                    const author = c.author?.[0]?.family || 'Unknown';
+                    const year = c.issued?.['date-parts']?.[0]?.[0] || c.year || 'n.d.';
+                    return `${author}, ${year}`;
+                  });
+                  return `(${formatted.join('; ')})`;
                 }
-            });
-            
-            // Handle individual citations [@key]
-            processed = processed.replace(/\[@([^\]]+)\]/g, (match, key) => {
-                return formatCitation(key);
-            });
-            
-            return processed;
+                case 'ieee': {
+                  const idxs = keys.map(k => Object.keys(citations).indexOf(k) + 1).sort((a, b) => a - b);
+                  return `[${idxs.join(', ')}]`;
+                }
+                case 'vancouver': {
+                  const idxs = keys.map(k => Object.keys(citations).indexOf(k) + 1).sort((a, b) => a - b);
+                  return `(${idxs.join(', ')})`;
+                }
+                default:
+                  return match; // 其它样式保持原状
+              }
+            }
+          );
+        
+          // 2. 再处理单个引用：[^key] 或 [@key]
+          text = text.replace(
+            /\[@([^\]]+)\]|\[\^([^\]]+)\]/g,
+            (m, key1, key2) => formatCitation(key1 || key2)
+          );
+        
+          return text;
         }
         
         // Generate bibliography with improved custom CSL support
