@@ -1,0 +1,12 @@
+# Compressed journal data (keep uncompressed JSON in repo)
+journals.json.gz
+journals.zip
+
+# Generated output
+output/
+*.tmp
+*.temp
+
+# OS files
+.DS_Store
+Thumbs.db

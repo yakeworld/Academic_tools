@@ -713,7 +713,7 @@ This is a demonstration of a markdown editor with BibTeX citation support. You c
           const fields = citation.fields;
           try {
             // eslint-disable-next-line no-eval
-            const citationString = eval(customStyle);
+            const citationString = typeof window[customStyle] === "function" ? window[customStyle]() : customStyle;
 
             // Check if the result is a string
             if (typeof citationString !== 'string') {

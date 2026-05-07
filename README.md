@@ -1,56 +1,51 @@
 # Academic_tools
-## 缘由
-快速获取领域知识并撰写学术论文，一致是研究热点。Poe搭建了一个工具，利用AI来帮助提取关键词，结合参考文献来润色论文，非常方便，其不足是国内访问不方便。https://poe.com/Academic_Search_mul
-可以将功能分解：
-### 1） 文献检索
-可以用DeepSeek来推荐关键词
-用[keywords_find](./keywords_find.html)来缩小检索访问。
-semantic scholar来找到一篇最相关论文，然后顺藤摸瓜根据参考文献以及被引文献来找到相关文献，也是非常方便。semantic scholar支持选择和保存文献，非常实用。也支持导出BIBTEX格式，其缺点是文献内容不全，可以通过[bibtex_enhance](./bibtex_enhance.html)来补充和完善。
-libgen也是非常好的文献资料来源：[libgen search](./libgen_search.html)
 
-### 2） 全文下载
-[学术文献搜索器](./Academic_Search_mul.html)所导出文献包括全文下载地址。
-部分文献可以通过SCI-HUB来下载。
-### 3）论文撰写
-[notebooklm](https://notebooklm.google.com/)上传论文和参考文献，通过对话确定论文题目，可以快速完整论文撰写。
-通过提示词构建，支持参考文献引用[@key]
-### 4）论文修改和渲染
-[Makrdown_academic](./Academic_bibtex.html)支持bibtex引用markdown格式渲染，支持参考文献格式设定，打开google 全文翻译可以支持左侧英文右侧中文显示，快速完成论文修改。可以在上传到notebooklm反复润色。
+Academic tools for fast literature search, PDF download, and academic paper writing.
 
-## 工具列表
+## Tools
 
-1. [Makrdown_academic](./Academic_bibtex.html)
-   这是一个使用 CodeMirror 和 Tailwind CSS 构建的 Markdown 编辑器，它具备 BibTeX 引用支持。用户可以实时预览 Markdown 内容，并能通过简单的操作插入和管理学术引用。编辑器支持多种参考文献格式（APA、MLA、Chicago、Harvard、IEEE），支持自定义参考文献格式，并提供暗黑模式切换功能，旨在为需要撰写学术文档的用户提供便捷的体验。 
+### 1. [Academic Search](./Academic_Search_mul.html)
+Academic literature search — integrates PubMed, Semantic Scholar, and arXiv.
+- Multi-database search
+- Filters by keyword, author, year
+- BibTeX export
 
-3. [Literature_Search_mu](./Academic_Search_mul.html)
-学术文献搜索器，专注学术文献快速检索，集成三大数据库，让科研人员更高效地找到所需资料。
-主要特点：
-多库集成： 同时搜索 PubMed, Semantic Scholar 和 arXiv，覆盖广泛的学术领域。
-筛选精准： 支持关键词、作者、年份等多条件筛选，快速定位目标文献。
-BibTeX导出： 一键导出 BibTeX 格式，方便论文写作和文献管理。
-适用人群： 科研人员、研究生、学者等需要查阅学术文献的人群。
+### 2. [Literature Search](./Literature_Search_mu.html)
+Alternative literature search tool with multi-database support and BibTeX export.
 
-3. [keywords_find](./keywords_find.html)
-关键词的组合是非常关键的，可以缩小检索范围，精准找到所需要的文献
+### 3. [Markdown Academic](./Markdown_academic.html)
+Markdown editor with CodeMirror and BibTeX citation support.
+- Real-time preview
+- Multiple reference formats (APA, MLA, Chicago, Harvard, IEEE, custom)
+- Dark mode toggle
+- Side-by-side English/Chinese comparison via Google Translate
 
-4. [期刊信息检索查询](./zkyfqv2.html)
-包括中科院2025期刊分区信息，SCI指数信息，支持筛选和排序。
-数据来源于https://github.com/hitfyd/ShowJCR
+### 4. [Markdown Academic (alt)](./markdown_academic.html)
+Alternative Markdown editor with BibTeX support and reference rendering.
 
-5. [bibtex_enhance](./bibtex_enhance.html)
-Semantic Scholar检索论文，快速找到目标文献并保存和导出参考文献是比较合适的文献检索方法，缺点是导出的bibtex文献内容不完整，缺乏全文下载地址，卷期页等信息。小工具用来补充和完善文献。
+### 5. [BibTeX Enhance](./bibtex_enhance.html)
+Enrich incomplete BibTeX entries from Semantic Scholar with full metadata (DOI, volume, issue, pages, full-text download links).
 
-##  如何配置智能科研环境
-### 安装opencode
-npm install -g opencode-ai
-npm config get prefix
-echo 'export PATH="/home/***/.hermes/node/bin:$PATH"' >> ~/.bashrc
-source ~/.bashrc
-运行opencode，有免费模型可用，直接可以对话交流配置ollama，安装hermes,openclaw等服务
+### 6. [Keywords Finder](./keywords_find.html)
+Generate and combine search keywords to narrow academic search scope.
 
+### 7. [Journal Query](./zkyfqv2.html)
+CAS journal ranking (2025) and SCI impact factor data.
+Data source: https://github.com/hitfyd/ShowJCR
 
+### 8. [Journal Query v3](./zkyfqv3.html)
+Extended journal query with additional fields.
 
+### 9. [Journal Query (alt)](./zkyfq.html)
+Alternative journal information query tool.
 
+### 10. [LibGen Search](./libgen_search.html)
+Direct search for literature via LibGen.
 
+## Workflow
 
- 
+1. Use **Keywords Finder** to craft precise search terms
+2. Use **Academic Search** / **Literature Search** to find papers
+3. Use **BibTeX Enhance** to enrich entries
+4. Use **Markdown Academic** to write with BibTeX citations
+5. Upload to [NotebookLM](https://notebooklm.google.com/) for AI-assisted polishing
